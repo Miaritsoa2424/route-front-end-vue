@@ -1,47 +1,37 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { IonApp, IonRouterOutlet, IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel } from '@ionic/vue';
+import { home, map, document } from 'ionicons/icons';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+const isTabRoute = () => {
+  return ['Home', 'Map', 'Signalements'].includes(route.name as string);
+};
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <IonApp>
+    <IonRouterOutlet v-if="!isTabRoute()" />
+    <IonTabs v-else>
+      <IonRouterOutlet />
+      <IonTabBar slot="bottom">
+        <IonTabButton tab="home" href="/home">
+          <IonIcon :icon="home" />
+          <IonLabel>Accueil</IonLabel>
+        </IonTabButton>
+        <IonTabButton tab="map" href="/map">
+          <IonIcon :icon="map" />
+          <IonLabel>Carte</IonLabel>
+        </IonTabButton>
+        <IonTabButton tab="signalements" href="/signalements">
+          <IonIcon :icon="document" />
+          <IonLabel>Signalements</IonLabel>
+        </IonTabButton>
+      </IonTabBar>
+    </IonTabs>
+  </IonApp>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
 </style>
