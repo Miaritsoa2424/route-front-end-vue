@@ -15,4 +15,10 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  optimizeDeps: {
+    exclude: ['@capacitor/core', '@capacitor/geolocation']
+  },
+  ssr: {
+    noExternal: ['@capacitor/core', '@capacitor/geolocation']
+  }
 })

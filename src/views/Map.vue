@@ -6,44 +6,194 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true">
+    <ion-content :fullscreen="true" class="map-content">
       <ion-header collapse="condense">
         <ion-toolbar>
           <ion-title size="large">Carte</ion-title>
         </ion-toolbar>
       </ion-header>
 
-      <div id="container">
-        <strong>Page Carte</strong>
-        <p>Affichage de la carte ici</p>
+      <div id="map" ref="mapContainer"></div>
+      
+      <div v-if="loading" class="loading-indicator">
+        <ion-spinner></ion-spinner>
+        <p>Localisation en cours...</p>
+      </div>
+
+      <div v-if="error" class="error-message">
+        <ion-alert 
+          :is-open="!!error" 
+          header="Erreur de localisation"
+          :message="error"
+          :buttons="['OK']"
+          @didDismiss="error = null"
+        ></ion-alert>
+      </div>
+
+      <div v-if="precision" class="info-badge">
+        <p>Précision: ±{{ Math.round(precision) }}m</p>
+        <ion-button @click="retryGeolocation" size="small" expand="block">
+          Relocaliser
+        </ion-button>
       </div>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { ref, onMounted } from 'vue';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton } from '@ionic/vue';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Icons
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+const mapContainer = ref<HTMLElement>();
+const loading = ref(true);
+const error = ref<string | null>(null);
+const precision = ref<number | null>(null);
+let map: L.Map;
+let userMarker: L.Marker | null = null;
+
+// Correction des icônes par défaut de leaflet
+const defaultIcon = L.icon({
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+L.Marker.prototype.setIcon(defaultIcon);
+
+onMounted(() => {
+  initializeMap();
+});
+
+const initializeMap = () => {
+  // Vérifier si navigator.geolocation est disponible
+  if (!navigator.geolocation) {
+    error.value = 'La géolocalisation n\'est pas supportée par votre navigateur';
+    loading.value = false;
+    // Fallback sur une position par défaut (Casablanca, Maroc)
+    createMap(33.5731, -7.5898);
+    return;
+  }
+
+  // Récupérer la position de l'utilisateur avec haute précision
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude, accuracy } = position.coords;
+      precision.value = accuracy;
+      createMap(latitude, longitude);
+      loading.value = false;
+    },
+    (err) => {
+      let errorMessage = 'Erreur de géolocalisation';
+      
+      switch (err.code) {
+        case err.PERMISSION_DENIED:
+          errorMessage = 'Permission de localisation refusée. Activez l\'accès à votre position dans les paramètres du navigateur.';
+          break;
+        case err.POSITION_UNAVAILABLE:
+          errorMessage = 'Position non disponible. Vérifiez votre connexion internet.';
+          break;
+        case err.TIMEOUT:
+          errorMessage = 'Délai d\'attente dépassé. Réessayez.';
+          break;
+      }
+      
+      error.value = errorMessage;
+      loading.value = false;
+      // Fallback sur une position par défaut
+      createMap(33.5731, -7.5898);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+};
+
+const retryGeolocation = () => {
+  loading.value = true;
+  error.value = null;
+  initializeMap();
+};
+
+const createMap = (lat: number, lng: number) => {
+  if (!mapContainer.value) return;
+
+  // Supprimer l'ancienne carte si elle existe
+  if (map) {
+    map.remove();
+  }
+
+  // Créer la carte
+  map = L.map(mapContainer.value).setView([lat, lng], 15);
+
+  // Ajouter le fond de carte OpenStreetMap
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Ajouter un marqueur à la position actuelle
+  userMarker = L.marker([lat, lng], { icon: defaultIcon })
+    .addTo(map)
+    .bindPopup(`<strong>📍 Ma position</strong><br>Précision: ±${Math.round((precision.value || 0))}m`)
+    .openPopup();
+};
 </script>
 
 <style scoped>
-#container {
-  text-align: center;
+#map {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+}
+
+.map-content {
+  --padding-bottom: 0;
+}
+
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  gap: 1rem;
+}
+
+.error-message {
+  padding: 1rem;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin: 1rem;
+}
+
+.info-badge {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 400;
+  max-width: 200px;
 }
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
-
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-  color: #8c8c8c;
-  margin: 0;
+.info-badge p {
+  margin: 5px 0;
+  font-size: 12px;
+  color: #333;
 }
 </style>
