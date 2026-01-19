@@ -45,6 +45,7 @@ import { ref, onMounted } from 'vue';
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton } from '@ionic/vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { SIGNALEMENTS_MOCK, STATUS_COLORS } from '../data/signalements';
 
 // Icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -78,8 +79,8 @@ const initializeMap = () => {
   if (!navigator.geolocation) {
     error.value = 'La géolocalisation n\'est pas supportée par votre navigateur';
     loading.value = false;
-    // Fallback sur une position par défaut (Casablanca, Maroc)
-    createMap(33.5731, -7.5898);
+    // Fallback sur une position par défaut (Andoharanofotsy, Antananarivo, Madagascar)
+    createMap(-18.8792, 47.5079);
     return;
   }
 
@@ -108,8 +109,8 @@ const initializeMap = () => {
       
       error.value = errorMessage;
       loading.value = false;
-      // Fallback sur une position par défaut
-      createMap(33.5731, -7.5898);
+      // Fallback sur une position par défaut (Andoharanofotsy, Antananarivo, Madagascar)
+      createMap(-18.8792, 47.5079);
     },
     {
       enableHighAccuracy: true,
@@ -147,6 +148,40 @@ const createMap = (lat: number, lng: number) => {
     .addTo(map)
     .bindPopup(`<strong>📍 Ma position</strong><br>Précision: ±${Math.round((precision.value || 0))}m`)
     .openPopup();
+
+  // Ajouter les signalements sur la carte
+  addSignalementsToMap();
+};
+
+const addSignalementsToMap = () => {
+  SIGNALEMENTS_MOCK.forEach((signalement) => {
+    const color = STATUS_COLORS[signalement.statut];
+    
+    // Créer une icône personnalisée avec la couleur du statut
+    const customIcon = L.divIcon({
+      html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px;">📌</div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -15]
+    });
+
+    // Créer le popup avec les informations du signalement
+    const popupContent = `
+      <div style="min-width: 250px;">
+        <strong style="font-size: 14px;">${signalement.titre}</strong><br>
+        <span style="color: ${color}; font-weight: bold;">${signalement.statut.toUpperCase()}</span><br><br>
+        <small><strong>Description:</strong> ${signalement.description}</small><br>
+        <small><strong>Date:</strong> ${new Date(signalement.date).toLocaleDateString('fr-FR')}</small><br>
+        ${signalement.surface ? `<small><strong>Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
+        <small><strong>Type:</strong> ${signalement.type}</small>
+      </div>
+    `;
+
+    // Ajouter le marqueur sur la carte
+    L.marker([signalement.latitude, signalement.longitude], { icon: customIcon })
+      .addTo(map)
+      .bindPopup(popupContent);
+  });
 };
 </script>
 
