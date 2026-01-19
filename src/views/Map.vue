@@ -46,7 +46,7 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAl
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { STATUS_COLORS, type Signalement } from '../data/signalements';
-import { getAllSignalements, loadSignalementsFromStorage } from '../stores/signalementsStore';
+import { getAllSignalements } from '../stores/signalementsStore';
 
 // Icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -72,7 +72,6 @@ const defaultIcon = L.icon({
 L.Marker.prototype.setIcon(defaultIcon);
 
 onMounted(() => {
-  loadSignalementsFromStorage();
   initializeMap();
 });
 
@@ -177,8 +176,6 @@ const addSignalementsToMap = () => {
         <small><strong>Description:</strong> ${signalement.description}</small><br>
         <small><strong>Date:</strong> ${new Date(signalement.date).toLocaleDateString('fr-FR')}</small><br>
         ${signalement.surface ? `<small><strong>Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
-        <small><strong>Type:</strong> ${signalement.type}</small>
-        ${signalement.isLocal ? '<br><span style="color: #2196F3; font-weight: bold;">✓ Local</span>' : ''}
       </div>
     `;
 

@@ -58,7 +58,6 @@
               <div class="signalement-meta">
                 <span>📅 {{ formatDate(signalement.date) }}</span>
                 <span v-if="signalement.surface">📏 {{ signalement.surface }}m²</span>
-                <span>🏷️ {{ signalement.type }}</span>
               </div>
 
               <div class="coordinates">
@@ -95,13 +94,9 @@ import {
 } from '@ionic/vue';
 import { addCircle } from 'ionicons/icons';
 import { SIGNALEMENTS_MOCK, STATUS_COLORS, STATUS_LABELS, type SignalementStatus, type Signalement } from '../data/signalements';
-import { loadSignalementsFromStorage, getAllSignalements } from '../stores/signalementsStore';
+import {getAllSignalements } from '../stores/signalementsStore';
 
 const selectedStatus = ref<string>('tous');
-
-onMounted(() => {
-  loadSignalementsFromStorage();
-});
 
 const allSignalements = computed(() => getAllSignalements().value);
 
@@ -114,7 +109,7 @@ const filteredSignalements = computed(() => {
   return allSignalements.value.filter((s: Signalement) => s.statut === selectedStatus.value);
 });
 
-const getCountByStatus = (status: SignalementStatus) => {
+const getCountByStatus = (status: string) => {
   return allSignalements.value.filter((s: Signalement) => s.statut === status).length;
 };
 

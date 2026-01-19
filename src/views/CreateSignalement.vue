@@ -45,62 +45,39 @@
             <ion-card-title>2. Informations du signalement</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <!-- Type -->
+            <!-- Entreprise -->
             <ion-item>
-              <ion-label position="floating">Type de problème</ion-label>
-              <ion-select v-model="form.type" placeholder="Sélectionner">
-                <ion-select-option value="nid-de-poule">Nid de poule</ion-select-option>
-                <ion-select-option value="inondation">Inondation</ion-select-option>
-                <ion-select-option value="arbre">Arbre tombé</ion-select-option>
-                <ion-select-option value="lampadaire">Lampadaire cassé</ion-select-option>
-                <ion-select-option value="chaussée">Chaussée dégradée</ion-select-option>
-                <ion-select-option value="autre">Autre</ion-select-option>
+              <ion-label position="floating">Entreprise</ion-label>
+              <ion-input v-model="form.entreprise" placeholder="Ex: ENT_1" required></ion-input>
+            </ion-item>
+
+            <!-- Surface -->
+            <ion-item>
+              <ion-label position="floating">Surface (m²)</ion-label>
+              <ion-input v-model.number="form.surface" type="number" placeholder="0" required></ion-input>
+            </ion-item>
+
+            <!-- Budget -->
+            <ion-item>
+              <ion-label position="floating">Budget (Ar)</ion-label>
+              <ion-input v-model.number="form.budget" type="number" placeholder="0" required></ion-input>
+            </ion-item>
+
+            <!-- Avancement -->
+            <ion-item>
+              <ion-label position="floating">Avancement (%)</ion-label>
+              <ion-input v-model.number="form.avancement" type="number" placeholder="0" min="0" max="100" required></ion-input>
+            </ion-item>
+
+            <!-- Statut -->
+            <ion-item>
+              <ion-label position="floating">Statut</ion-label>
+              <ion-select v-model="form.dernier_statut" placeholder="Sélectionner" required>
+                <ion-select-option value="signale">Signalé</ion-select-option>
+                <ion-select-option value="en_cours">En cours</ion-select-option>
+                <ion-select-option value="termine">Terminé</ion-select-option>
               </ion-select>
             </ion-item>
-
-            <!-- Titre -->
-            <ion-item>
-              <ion-label position="floating">Titre</ion-label>
-              <ion-input v-model="form.titre" placeholder="Résumé du problème"></ion-input>
-            </ion-item>
-
-            <!-- Description -->
-            <ion-item>
-              <ion-label position="floating">Description détaillée</ion-label>
-              <ion-textarea v-model="form.description" placeholder="Décrivez le problème en détail" :rows="4"></ion-textarea>
-            </ion-item>
-
-            <!-- Date -->
-            <ion-item>
-              <ion-label position="floating">Date du problème</ion-label>
-              <ion-input v-model="form.date" type="date"></ion-input>
-            </ion-item>
-
-            <!-- Surface (optionnel) -->
-            <ion-item>
-              <ion-label position="floating">Surface (m²) - optionnel</ion-label>
-              <ion-input v-model.number="form.surface" type="number" placeholder="0"></ion-input>
-            </ion-item>
-
-            <!-- Photo -->
-            <div class="photo-section">
-              <ion-label>Photo - optionnel</ion-label>
-              <div class="photo-preview" v-if="photoPreview">
-                <img :src="photoPreview" alt="Photo du problème" class="preview-image">
-                <ion-button color="light" size="small" @click="removePhoto">Supprimer</ion-button>
-              </div>
-              <ion-button v-else color="secondary" fill="outline" @click="triggerPhotoInput">
-                <ion-icon slot="start" name="camera"></ion-icon>
-                Ajouter une photo
-              </ion-button>
-              <input 
-                ref="photoInput" 
-                type="file" 
-                accept="image/*" 
-                style="display: none"
-                @change="handlePhotoSelect"
-              >
-            </div>
           </ion-card-content>
         </ion-card>
 
@@ -108,18 +85,20 @@
         <ion-button 
           expand="block" 
           color="success"
-          :disabled="!isFormValid"
+          :disabled="!isFormValid || isLoading"
           @click="submitForm"
           class="submit-button"
         >
-          <ion-icon slot="start" name="checkmark-done"></ion-icon>
-          Créer le signalement
+          <ion-spinner v-if="isLoading" name="crescent" />
+          <ion-icon v-else slot="start" name="checkmark-done"></ion-icon>
+          {{ isLoading ? 'Création en cours...' : 'Créer le signalement' }}
         </ion-button>
 
         <ion-button 
           expand="block" 
           color="medium"
           @click="resetForm"
+          :disabled="isLoading"
           class="reset-button"
         >
           Réinitialiser
@@ -140,6 +119,16 @@
           <div id="map-selector" ref="mapContainer" class="map-selector-modal"></div>
         </ion-content>
       </ion-modal>
+
+      <!-- Toast pour les messages -->
+      <ion-toast
+        :is-open="showToast"
+        :message="toastMessage"
+        :duration="3000"
+        :color="toastColor"
+        position="bottom"
+        @did-dismiss="showToast = false"
+      ></ion-toast>
     </ion-content>
   </ion-page>
 </template>
@@ -150,41 +139,43 @@ import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader,
   IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect,
-  IonSelectOption, IonTextarea, IonButton, IonIcon, IonButtons, IonBackButton,
-  IonModal,
+  IonSelectOption, IonButton, IonIcon, IonButtons, IonBackButton,
+  IonModal, IonToast, IonSpinner,
   useIonRouter
 } from '@ionic/vue';
-import { camera, checkmarkDone } from 'ionicons/icons';
+import { checkmarkDone } from 'ionicons/icons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { addSignalement } from '../stores/signalementsStore';
+import { addSignalementToFirestore } from '../stores/signalementsStore';
+import { SignalementStatus } from '../data/signalements';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const router = useRouter();
 const ionRouter = useIonRouter();
 const mapContainer = ref<HTMLElement>();
-const photoInput = ref<HTMLInputElement>();
 let map: L.Map;
 let selectedMarker: L.Marker | null = null;
 
 const showMapModal = ref(false);
 const selectedPosition = ref<{ lat: number; lng: number } | null>(null);
-const photoPreview = ref<string | null>(null);
-const photoBase64 = ref<string | null>(null);
+const isLoading = ref(false);
+const showToast = ref(false);
+const toastMessage = ref('');
+const toastColor = ref<'success' | 'danger'>('success');
 
 const form = ref<{
-  type: string;
-  titre: string;
-  description: string;
-  date: string;
+  entreprise: string;
   surface: number | null;
+  budget: number | null;
+  avancement: number | null;
+  dernier_statut: string;
 }>({
-  type: '',
-  titre: '',
-  description: '',
-  date: new Date().toISOString().split('T')[0] as string,
-  surface: null as number | null
+  entreprise: '',
+  surface: null as number | null,
+  budget: null as number | null,
+  avancement: 0 as number | null,
+  dernier_statut: 'signale'
 });
 
 const defaultIcon = L.icon({
@@ -199,7 +190,7 @@ const defaultIcon = L.icon({
 L.Marker.prototype.setIcon(defaultIcon);
 
 const isFormValid = computed(() => {
-  return form.value.type && form.value.titre && form.value.description && selectedPosition.value;
+  return form.value.entreprise && form.value.surface && form.value.budget && form.value.avancement !== null && selectedPosition.value;
 });
 
 onMounted(() => {
@@ -262,67 +253,61 @@ const clearPosition = () => {
   }
 };
 
-const triggerPhotoInput = () => {
-  photoInput.value?.click();
-};
-
-const handlePhotoSelect = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      photoPreview.value = result;
-      photoBase64.value = result;
-    };
-    reader.readAsDataURL(file);
-  }
-};
-
-const removePhoto = () => {
-  photoPreview.value = null;
-  photoBase64.value = null;
-  if (photoInput.value) {
-    photoInput.value.value = '';
-  }
-};
-
 const resetForm = () => {
   form.value = {
-    type: '',
-    titre: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0] as string,
-    surface: null
+    entreprise: '',
+    surface: null,
+    budget: null,
+    avancement: 0,
+    dernier_statut: 'signale'
   };
   selectedPosition.value = null;
-  photoPreview.value = null;
-  photoBase64.value = null;
   clearPosition();
 };
 
 const submitForm = async () => {
   if (!isFormValid.value || !selectedPosition.value) return;
 
+  isLoading.value = true;
+
   try {
-    addSignalement({
-      titre: form.value.titre,
-      description: form.value.description,
+    await addSignalementToFirestore({
       latitude: selectedPosition.value.lat,
       longitude: selectedPosition.value.lng,
-      date: form.value.date,
-      statut: 'signalé',
-      type: form.value.type,
-      surface: form.value.surface || undefined,
-      photoUrl: photoBase64.value || undefined
+      statut: SignalementStatus.SIGNALE,
+      surface: form.value.surface || 0,
+      budget: form.value.budget || 0,
+      avancement: form.value.avancement || 0,
+      entreprise: form.value.entreprise,
+      dernier_statut: form.value.dernier_statut,
+      // Champs nécessaires pour compatibilité
+      titre: `Signalement - ${form.value.entreprise}`,
+      description: `Surface: ${form.value.surface}m², Budget: ${form.value.budget}Ar`,
+      date: new Date().toISOString()
     });
 
-    // Rediriger vers la liste des signalements
-    ionRouter.navigate('/signalements', 'back');
-  } catch (error) {
-    console.error('Erreur lors de la création du signalement', error);
+    // Afficher le message de succès
+    toastColor.value = 'success';
+    toastMessage.value = '✅ Signalement créé avec succès!';
+    showToast.value = true;
+
+    // Réinitialiser le formulaire
+    resetForm();
+
+    // Rediriger vers la liste après 2 secondes
+    setTimeout(() => {
+      ionRouter.navigate('/signalements', 'back');
+    }, 2000);
+
+  } catch (error: any) {
+    console.error('❌ Erreur lors de la création du signalement', error);
+    
+    // Afficher le message d'erreur
+    toastColor.value = 'danger';
+    toastMessage.value = `❌ Erreur: ${error.message || 'Impossible de créer le signalement'}`;
+    showToast.value = true;
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>

@@ -4,6 +4,7 @@ import { createApp } from 'vue'
 import { IonicVue } from '@ionic/vue'
 import App from './App.vue'
 import router from './router'
+import { initSignalementsStore } from './stores/signalementsStore'
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/vue/css/core.css'
@@ -25,6 +26,8 @@ const app = createApp(App)
   .use(IonicVue)
   .use(router)
 
-router.isReady().then(() => {
+router.isReady().then(async () => {
+  // Initialiser le store avant de monter l'app
+  await initSignalementsStore()
   app.mount('#app')
 })
