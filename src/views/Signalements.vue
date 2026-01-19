@@ -14,6 +14,14 @@
       </ion-header>
 
       <div class="signalements-container">
+        <!-- Bouton ajouter -->
+        <div class="add-button-container">
+          <ion-button expand="block" color="success" router-link="/create-signalement">
+            <ion-icon slot="start" name="add-circle"></ion-icon>
+            Créer un signalement
+          </ion-button>
+        </div>
+
         <!-- Filtres -->
         <div class="filters">
           <ion-segment :value="selectedStatus" @ion-change="selectedStatus = ($event.detail.value as string)">
@@ -70,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { 
   IonContent, 
   IonHeader, 
@@ -81,23 +89,33 @@ import {
   IonItem, 
   IonBadge,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonButton,
+  IonIcon
 } from '@ionic/vue';
-import { SIGNALEMENTS_MOCK, STATUS_COLORS, STATUS_LABELS, type SignalementStatus } from '../data/signalements';
+import { addCircle } from 'ionicons/icons';
+import { SIGNALEMENTS_MOCK, STATUS_COLORS, STATUS_LABELS, type SignalementStatus, type Signalement } from '../data/signalements';
+import { loadSignalementsFromStorage, getAllSignalements } from '../stores/signalementsStore';
 
 const selectedStatus = ref<string>('tous');
 
-const totalSignalements = computed(() => SIGNALEMENTS_MOCK.length);
+onMounted(() => {
+  loadSignalementsFromStorage();
+});
+
+const allSignalements = computed(() => getAllSignalements().value);
+
+const totalSignalements = computed(() => allSignalements.value.length);
 
 const filteredSignalements = computed(() => {
   if (selectedStatus.value === 'tous') {
-    return SIGNALEMENTS_MOCK;
+    return allSignalements.value;
   }
-  return SIGNALEMENTS_MOCK.filter(s => s.statut === selectedStatus.value);
+  return allSignalements.value.filter((s: Signalement) => s.statut === selectedStatus.value);
 });
 
 const getCountByStatus = (status: SignalementStatus) => {
-  return SIGNALEMENTS_MOCK.filter(s => s.statut === status).length;
+  return allSignalements.value.filter((s: Signalement) => s.statut === status).length;
 };
 
 const getStatusColor = (status: SignalementStatus): string => {
@@ -121,6 +139,10 @@ const formatDate = (dateString: string): string => {
 <style scoped>
 .signalements-container {
   padding: 1rem;
+}
+
+.add-button-container {
+  margin-bottom: 1.5rem;
 }
 
 .filters {

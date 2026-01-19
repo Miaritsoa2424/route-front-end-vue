@@ -45,7 +45,8 @@ import { ref, onMounted } from 'vue';
 import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton } from '@ionic/vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { SIGNALEMENTS_MOCK, STATUS_COLORS } from '../data/signalements';
+import { STATUS_COLORS, type Signalement } from '../data/signalements';
+import { getAllSignalements, loadSignalementsFromStorage } from '../stores/signalementsStore';
 
 // Icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -71,6 +72,7 @@ const defaultIcon = L.icon({
 L.Marker.prototype.setIcon(defaultIcon);
 
 onMounted(() => {
+  loadSignalementsFromStorage();
   initializeMap();
 });
 
@@ -154,7 +156,9 @@ const createMap = (lat: number, lng: number) => {
 };
 
 const addSignalementsToMap = () => {
-  SIGNALEMENTS_MOCK.forEach((signalement) => {
+  const signalements = getAllSignalements().value;
+  
+  signalements.forEach((signalement: Signalement) => {
     const color = STATUS_COLORS[signalement.statut];
     
     // Créer une icône personnalisée avec la couleur du statut
@@ -174,6 +178,7 @@ const addSignalementsToMap = () => {
         <small><strong>Date:</strong> ${new Date(signalement.date).toLocaleDateString('fr-FR')}</small><br>
         ${signalement.surface ? `<small><strong>Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
         <small><strong>Type:</strong> ${signalement.type}</small>
+        ${signalement.isLocal ? '<br><span style="color: #2196F3; font-weight: bold;">✓ Local</span>' : ''}
       </div>
     `;
 
