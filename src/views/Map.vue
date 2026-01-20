@@ -3,6 +3,16 @@
     <ion-header :translucent="true">
       <ion-toolbar>
         <ion-title>Carte</ion-title>
+        <ion-buttons slot="end">
+          <ion-button v-if="!authUser" router-link="/login">
+            <ion-icon slot="start" name="log-in"></ion-icon>
+            Se connecter
+          </ion-button>
+          <ion-button v-else @click="handleLogout">
+            <ion-icon slot="start" name="person-circle"></ion-icon>
+            {{ authUser.email }}
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
@@ -12,6 +22,20 @@
           <ion-title size="large">Carte</ion-title>
         </ion-toolbar>
       </ion-header>
+
+      <!-- Filtres par statut -->
+      <div class="map-filters">
+        <!-- Toggle "Mes signalements uniquement" (visible seulement si connecté) -->
+        <div v-if="authUser" class="filter-toggle-container">
+          <ion-item>
+            <ion-label>Mes signalements uniquement</ion-label>
+            <ion-toggle 
+              v-model="showOnlyMySignalements"
+              slot="end"
+            ></ion-toggle>
+          </ion-item>
+        </div>
+      </div>
 
       <div id="map" ref="mapContainer"></div>
       
@@ -41,12 +65,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton } from '@ionic/vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton, IonSegment, IonSegmentButton, IonButtons, IonIcon, IonToggle, IonItem, IonLabel } from '@ionic/vue';
+import { logOut, personCircle } from 'ionicons/icons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { STATUS_COLORS, type Signalement } from '../data/signalements';
 import { getAllSignalements } from '../stores/signalementsStore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase/firebase';
+import { AuthService } from '../services/authService';
+import type { User } from 'firebase/auth';
 
 // Icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -56,8 +85,26 @@ const mapContainer = ref<HTMLElement>();
 const loading = ref(true);
 const error = ref<string | null>(null);
 const precision = ref<number | null>(null);
+const authUser = ref<User | null>(null);
+const showOnlyMySignalements = ref<boolean>(false);
 let map: L.Map;
 let userMarker: L.Marker | null = null;
+let signalementMarkers: L.Marker[] = [];
+
+// Écouter l'authentification
+onMounted(() => {
+  onAuthStateChanged(auth, (user) => {
+    authUser.value = user;
+  });
+});
+
+const handleLogout = async () => {
+  try {
+    await AuthService.logout();
+  } catch (err) {
+    console.error('Erreur lors de la déconnexion:', err);
+  }
+};
 
 // Correction des icônes par défaut de leaflet
 const defaultIcon = L.icon({
@@ -70,6 +117,31 @@ const defaultIcon = L.icon({
 });
 
 L.Marker.prototype.setIcon(defaultIcon);
+
+onMounted(() => {
+  initializeMap();
+});
+
+const allSignalements = computed(() => getAllSignalements().value);
+
+const filteredSignalements = computed(() => {
+  let filtered = allSignalements.value;
+
+  // Filtrer par utilisateur si toggle activé
+  if (showOnlyMySignalements.value && authUser.value) {
+    filtered = filtered.filter((s: Signalement) => s.id_user === authUser.value?.uid);
+  }
+
+  return filtered;
+});
+
+const getCountByStatus = (status: string) => {
+  return allSignalements.value.filter((s: Signalement) => s.dernier_statut === status).length;
+};
+
+const getFilteredCountByStatus = (status: string) => {
+  return filteredSignalements.value.filter((s: Signalement) => s.dernier_statut === status).length;
+};
 
 onMounted(() => {
   initializeMap();
@@ -155,10 +227,14 @@ const createMap = (lat: number, lng: number) => {
 };
 
 const addSignalementsToMap = () => {
-  const signalements = getAllSignalements().value;
+  // Supprimer les anciens marqueurs
+  signalementMarkers.forEach(marker => map.removeLayer(marker));
+  signalementMarkers = [];
+  
+  const signalements = filteredSignalements.value;
   
   signalements.forEach((signalement: Signalement) => {
-    const color = STATUS_COLORS[signalement.statut];
+    const color = STATUS_COLORS[signalement.dernier_statut] || '#808080';
     
     // Créer une icône personnalisée avec la couleur du statut
     const customIcon = L.divIcon({
@@ -169,22 +245,37 @@ const addSignalementsToMap = () => {
     });
 
     // Créer le popup avec les informations du signalement
+    const statusLabel = {
+      'signale': 'Signalé',
+      'en_cours': 'En cours',
+      'termine': 'Terminé'
+    }[signalement.dernier_statut] || signalement.dernier_statut;
+
     const popupContent = `
       <div style="min-width: 250px;">
-        <strong style="font-size: 14px;">${signalement.titre}</strong><br>
-        <span style="color: ${color}; font-weight: bold;">${signalement.statut.toUpperCase()}</span><br><br>
-        <small><strong>Description:</strong> ${signalement.description}</small><br>
-        <small><strong>Date:</strong> ${new Date(signalement.date).toLocaleDateString('fr-FR')}</small><br>
+        <strong style="font-size: 14px;">${signalement.description}</strong><br>
+        <span style="color: ${color}; font-weight: bold;">${statusLabel.toUpperCase()}</span><br><br>
+        <small><strong>Entreprise:</strong> ${signalement.entreprise}</small><br>
+        <small><strong>Avancement:</strong> ${signalement.avancement}%</small><br>
         ${signalement.surface ? `<small><strong>Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
+        ${signalement.budget ? `<small><strong>Budget:</strong> ${signalement.budget}Ar</small><br>` : ''}
       </div>
     `;
 
     // Ajouter le marqueur sur la carte
-    L.marker([signalement.latitude, signalement.longitude], { icon: customIcon })
+    const marker = L.marker([signalement.latitude, signalement.longitude], { icon: customIcon })
       .addTo(map)
       .bindPopup(popupContent);
+    signalementMarkers.push(marker);
   });
 };
+
+// Observer les changements de filtre et réappliquer les marqueurs
+watch(() => showOnlyMySignalements.value, () => {
+  if (map) {
+    addSignalementsToMap();
+  }
+});
 </script>
 
 <style scoped>
@@ -192,10 +283,12 @@ const addSignalementsToMap = () => {
   width: 100%;
   height: 100%;
   min-height: 500px;
+  border-radius: 8px;
 }
 
 .map-content {
   --padding-bottom: 0;
+  background: #f8fafc;
 }
 
 .loading-indicator {
@@ -205,15 +298,17 @@ const addSignalementsToMap = () => {
   align-items: center;
   height: 100%;
   gap: 1rem;
+  color: #64748b;
 }
 
 .error-message {
   padding: 1rem;
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
+  background-color: #fee2e2;
+  color: #7f1d1d;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
   margin: 1rem;
+  font-weight: 500;
 }
 
 .info-badge {
@@ -221,16 +316,43 @@ const addSignalementsToMap = () => {
   bottom: 20px;
   right: 20px;
   background: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 400;
   max-width: 200px;
+  border: 1px solid #e2e8f0;
 }
 
 .info-badge p {
-  margin: 5px 0;
+  margin: 6px 0;
   font-size: 12px;
-  color: #333;
+  color: #475569;
+  font-weight: 500;
+}
+
+.map-filters {
+  padding: 1rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+ion-segment {
+  width: 100%;
+  --indicator-color: #10b981;
+}
+
+.filter-toggle-container {
+  margin-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+ion-button {
+  font-size: 12px;
+  font-weight: 500;
 }
 </style>

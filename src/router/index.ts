@@ -9,7 +9,7 @@ import CreateSignalement from '../views/CreateSignalement.vue';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/map'
   },
   {
     path: '/login',

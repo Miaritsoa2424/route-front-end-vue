@@ -55,11 +55,6 @@
             <span v-else>Se connecter</span>
           </IonButton>
         </form>
-
-        <!-- Signup Link -->
-        <div class="signup-link">
-          <p>Pas encore de compte? <router-link to="/signup">Créer un compte</router-link></p>
-        </div>
       </div>
     </IonContent>
   </IonPage>
@@ -212,21 +207,6 @@ const handleLogin = async () => {
   --background: #cbd5e0;
 }
 
-.signup-link {
-  text-align: center;
-  color: white;
-  font-size: 14px;
-}
-
-.signup-link a {
-  color: #ffd700;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.signup-link a:hover {
-  text-decoration: underline;
-}
 
 ion-spinner {
   margin-right: 8px;

@@ -45,10 +45,20 @@
             <ion-card-title>2. Informations du signalement</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <!-- Entreprise -->
+            <!-- Description -->
+            <ion-item>
+              <ion-label position="floating">Description</ion-label>
+              <ion-textarea v-model="form.description" placeholder="Décrivez le signalement" :rows="3" required></ion-textarea>
+            </ion-item>
+
+            <!-- Entreprise (Select) -->
             <ion-item>
               <ion-label position="floating">Entreprise</ion-label>
-              <ion-input v-model="form.entreprise" placeholder="Ex: ENT_1" required></ion-input>
+              <ion-select v-model="form.entreprise" placeholder="Sélectionner une entreprise" required>
+                <ion-select-option v-for="ent in entreprisesDisponibles" :key="ent.id" :value="ent.nom">
+                  {{ ent.nom }}
+                </ion-select-option>
+              </ion-select>
             </ion-item>
 
             <!-- Surface -->
@@ -140,14 +150,14 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader,
   IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, IonSelect,
   IonSelectOption, IonButton, IonIcon, IonButtons, IonBackButton,
-  IonModal, IonToast, IonSpinner,
+  IonModal, IonToast, IonSpinner, IonTextarea,
   useIonRouter
 } from '@ionic/vue';
 import { checkmarkDone } from 'ionicons/icons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { addSignalementToFirestore } from '../stores/signalementsStore';
-import { SignalementStatus } from '../data/signalements';
+import { addSignalementToFirestore, getEntreprises } from '../stores/signalementsStore';
+import { AuthService } from '../services/authService';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -163,14 +173,17 @@ const isLoading = ref(false);
 const showToast = ref(false);
 const toastMessage = ref('');
 const toastColor = ref<'success' | 'danger'>('success');
+const entreprisesDisponibles = getEntreprises();
 
 const form = ref<{
+  description: string;
   entreprise: string;
   surface: number | null;
   budget: number | null;
   avancement: number | null;
   dernier_statut: string;
 }>({
+  description: '',
   entreprise: '',
   surface: null as number | null,
   budget: null as number | null,
@@ -190,7 +203,7 @@ const defaultIcon = L.icon({
 L.Marker.prototype.setIcon(defaultIcon);
 
 const isFormValid = computed(() => {
-  return form.value.entreprise && form.value.surface && form.value.budget && form.value.avancement !== null && selectedPosition.value;
+  return form.value.description && form.value.entreprise && form.value.surface && form.value.budget !== null && form.value.avancement !== null && selectedPosition.value;
 });
 
 onMounted(() => {
@@ -255,6 +268,7 @@ const clearPosition = () => {
 
 const resetForm = () => {
   form.value = {
+    description: '',
     entreprise: '',
     surface: null,
     budget: null,
@@ -271,19 +285,19 @@ const submitForm = async () => {
   isLoading.value = true;
 
   try {
+    const currentUser = AuthService.getCurrentUser();
+    const userId = currentUser?.uid || undefined;
+
     await addSignalementToFirestore({
       latitude: selectedPosition.value.lat,
       longitude: selectedPosition.value.lng,
-      statut: SignalementStatus.SIGNALE,
+      description: form.value.description,
       surface: form.value.surface || 0,
       budget: form.value.budget || 0,
       avancement: form.value.avancement || 0,
       entreprise: form.value.entreprise,
       dernier_statut: form.value.dernier_statut,
-      // Champs nécessaires pour compatibilité
-      titre: `Signalement - ${form.value.entreprise}`,
-      description: `Surface: ${form.value.surface}m², Budget: ${form.value.budget}Ar`,
-      date: new Date().toISOString()
+      id_user: userId
     });
 
     // Afficher le message de succès

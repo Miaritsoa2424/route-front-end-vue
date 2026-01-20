@@ -4,30 +4,29 @@ export enum SignalementStatus {
   TERMINE = 'résolu'
 }
 
+export interface Entreprise {
+  id: number;
+  nom: string;
+}
+
 export interface Signalement {
   id: number | string;
-  titre: string;
   description: string;
   latitude: number;
   longitude: number;
-  statut: SignalementStatus;
-  date: string;
-  surface?: number; // en mètres carrés
-  avancement?: number;
-  budget?: number;
-  dernier_statut?: string;
-  entreprise?: string;
+  surface: number;
+  avancement: number;
+  budget: number;
+  dernier_statut: string;
+  entreprise: string;
+  id_user?: string;
 }
 
-// Données statiques pour le développement
-// Centre: Andoharanofotsy, Antananarivo, Madagascar
-export const SIGNALEMENTS_MOCK: Signalement[] = [];
-
 // Couleurs selon le statut
-export const STATUS_COLORS: Record<SignalementStatus, string> = {
-  [SignalementStatus.SIGNALE]: '#EF4444',      // Rouge
-  [SignalementStatus.EN_COURS]: '#F59E0B',     // Orange
-  [SignalementStatus.TERMINE]: '#10B981'       // Vert
+export const STATUS_COLORS: Record<string, string> = {
+  'signale': '#EF4444',      // Rouge
+  'en_cours': '#F59E0B',     // Orange
+  'termine': '#10B981'       // Vert
 };
 
 export const STATUS_LABELS: Record<SignalementStatus, string> = {

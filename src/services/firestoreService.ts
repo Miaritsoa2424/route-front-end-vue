@@ -1,5 +1,5 @@
 import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp } from 'firebase/firestore';
-import type { Signalement } from '../data/signalements';
+import type { Signalement, Entreprise } from '../data/signalements';
 import { SignalementStatus } from '../data/signalements';
 
 const db = getFirestore();
@@ -25,22 +25,17 @@ export class FirestoreService {
           longitude = data.localisation.longitude;
         }
 
-        // Mapper dernier_statut vers statut
-        const statut = this.mapStatusToEnum(data.dernier_statut);
-
         const signalement: Signalement = {
           id: data.id || doc.id,
-          titre: data.titre || `Signalement ${data.id}`,
-          description: data.description || `Entreprise: ${data.entreprise}, Budget: ${data.budget}`,
+          description: data.description,
           latitude,
           longitude,
-          statut,
-          date: data.date || new Date().toISOString(),
           surface: data.surface || 0,
-          avancement: data.avancement,
-          budget: data.budget,
-          dernier_statut: data.dernier_statut,
-          entreprise: data.entreprise
+          avancement: data.avancement || 0,
+          budget: data.budget || 0,
+          dernier_statut: data.dernier_statut || 'signale',
+          entreprise: data.entreprise,
+          id_user: data.id_user
         };
 
         signalements.push(signalement);
@@ -53,6 +48,29 @@ export class FirestoreService {
     }
   }
 
+  static async getAllEntreprises(): Promise<Entreprise[]> {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'entreprise'));
+      const entreprises: Entreprise[] = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.id && data.nom) {
+          entreprises.push({
+            id: data.id,
+            nom: data.nom
+          });
+        }
+      });
+
+      // Trier par nom
+      return entreprises.sort((a, b) => a.nom.localeCompare(b.nom));
+    } catch (error) {
+      console.error('Erreur lors de la récupération des entreprises:', error);
+      return []; // Retourner un array vide en cas d'erreur
+    }
+  }
+
   /**
    * Ajouter un nouveau signalement à Firestore
    */
@@ -61,20 +79,16 @@ export class FirestoreService {
       // Créer le geopoint pour Firestore
       const localisationGeoPoint = new GeoPoint(signalement.latitude, signalement.longitude);
 
-      // Document à ajouter à Firestore (respecte la structure Firestore)
+      // Document à ajouter à Firestore (structure finale)
       const docData = {
-        avancement: signalement.avancement || 0,
-        budget: signalement.budget || 0,
-        dernier_statut: signalement.dernier_statut || 'signale',
+        avancement: signalement.avancement,
+        budget: signalement.budget,
+        dernier_statut: signalement.dernier_statut,
         entreprise: signalement.entreprise,
-        localisation: localisationGeoPoint,
-        surface: signalement.surface || 0,
-        // Champs additionnels pour l'app
-        titre: signalement.titre,
         description: signalement.description,
-        date: signalement.date || new Date().toISOString(),
-        statut: signalement.statut,
-        // Timestamp serveur
+        localisation: localisationGeoPoint,
+        surface: signalement.surface,
+        id_user: signalement.id_user || null,
         createdAt: serverTimestamp()
       };
 

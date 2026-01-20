@@ -1,10 +1,32 @@
 import { ref, computed } from 'vue';
-import type { Signalement } from '../data/signalements';
+import type { Signalement, Entreprise } from '../data/signalements';
 import { FirestoreService } from '../services/firestoreService';
 
 // État réactif
 const firestoreSignalements = ref<Signalement[]>([]);
+const entreprises = ref<Entreprise[]>([]);
 const isLoading = ref(false);
+
+/**
+ * Charger les entreprises depuis Firestore
+ */
+export const loadEntreprisesFromFirestore = async () => {
+  try {
+    const data = await FirestoreService.getAllEntreprises();
+    entreprises.value = data.sort();
+    console.log('✅ Entreprises Firestore chargées:', data.length, data);
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des entreprises:', error);
+    entreprises.value = [];
+  }
+};
+
+/**
+ * Obtenir toutes les entreprises
+ */
+export const getEntreprises = () => {
+  return computed(() => [...entreprises.value]);
+};
 
 /**
  * Charger les signalements depuis Firestore
@@ -51,5 +73,6 @@ export const addSignalementToFirestore = async (signalement: Omit<Signalement, '
  */
 export const initSignalementsStore = async () => {
   await loadSignalementsFromFirestore();
+  await loadEntreprisesFromFirestore();
 };
 
