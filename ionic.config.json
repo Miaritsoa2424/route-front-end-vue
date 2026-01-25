@@ -1,0 +1,11 @@
+{
+  "name": "route-signalement",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue",
+  "build": {
+    "commander": "npm",
+    "cmd": "run build"
+  }
+}
