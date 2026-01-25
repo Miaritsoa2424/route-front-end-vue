@@ -105,7 +105,22 @@ const handleLogin = async () => {
       router.push('/map');
     }, 1000);
   } catch (error: any) {
-    errorMessage.value = error.message;
+    // Traduire les messages d'erreur Firebase
+    let userMessage = 'Erreur de connexion. Veuillez vérifier vos identifiants.';
+    
+    if (error.code === 'auth/user-not-found') {
+      userMessage = 'Cet email n\'existe pas. Vérifiez votre saisie.';
+    } else if (error.code === 'auth/wrong-password') {
+      userMessage = 'Mot de passe incorrect. Réessayez.';
+    } else if (error.code === 'auth/invalid-email') {
+      userMessage = 'Adresse email invalide.';
+    } else if (error.code === 'auth/too-many-requests') {
+      userMessage = 'Trop de tentatives. Réessayez plus tard.';
+    } else if (error.code === 'auth/network-request-failed') {
+      userMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+    }
+    
+    errorMessage.value = userMessage;
   } finally {
     isLoading.value = false;
   }
@@ -152,6 +167,20 @@ const handleLogin = async () => {
   margin-bottom: 20px;
   --background: #f8f9fa;
   border-radius: 8px;
+  --padding-top: 20px;
+  --padding-bottom: 8px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+.login-form ion-label {
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.login-form ion-input {
+  --padding-top: 8px;
+  --padding-bottom: 8px;
 }
 
 .login-form ion-item:last-of-type {

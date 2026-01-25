@@ -39,9 +39,29 @@
 
       <div id="map" ref="mapContainer"></div>
       
-      <div v-if="loading" class="loading-indicator">
-        <ion-spinner></ion-spinner>
-        <p>Localisation en cours...</p>
+      <!-- Légende des statuts -->
+      <div class="map-legend">
+        <div class="legend-title">Statuts</div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #EF4444;"></div>
+          <span>Signalé</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #F59E0B;"></div>
+          <span>En cours</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #10B981;"></div>
+          <span>Terminé</span>
+        </div>
+      </div>
+      
+      <!-- Loading indicator overlay -->
+      <div v-if="loading" class="loading-overlay">
+        <div class="loading-content">
+          <ion-spinner name="crescent" color="success"></ion-spinner>
+          <p>Localisation en cours...</p>
+        </div>
       </div>
 
       <div v-if="error" class="error-message">
@@ -289,6 +309,7 @@ watch(() => showOnlyMySignalements.value, () => {
 .map-content {
   --padding-bottom: 0;
   background: #f8fafc;
+  position: relative;
 }
 
 .loading-indicator {
@@ -299,6 +320,40 @@ watch(() => showOnlyMySignalements.value, () => {
   height: 100%;
   gap: 1rem;
   color: #64748b;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(248, 250, 252, 0.9);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  gap: 1rem;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-content p {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.loading-content ion-spinner {
+  --color: #10b981;
 }
 
 .error-message {
@@ -329,6 +384,49 @@ watch(() => showOnlyMySignalements.value, () => {
   font-size: 12px;
   color: #475569;
   font-weight: 500;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 400;
+  border: 1px solid #e2e8f0;
+  min-width: 150px;
+}
+
+.legend-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: #1e293b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .map-filters {

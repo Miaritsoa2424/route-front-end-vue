@@ -318,7 +318,17 @@ const submitForm = async () => {
     
     // Afficher le message d'erreur
     toastColor.value = 'danger';
-    toastMessage.value = `❌ Erreur: ${error.message || 'Impossible de créer le signalement'}`;
+    
+    let userMessage = '❌ Impossible de créer le signalement. Vérifiez vos informations.';
+    if (error.message && error.message.includes('permission')) {
+      userMessage = '❌ Permission refusée. Vous n\'avez pas les droits nécessaires.';
+    } else if (error.message && error.message.includes('network')) {
+      userMessage = '❌ Erreur réseau. Vérifiez votre connexion internet.';
+    } else if (!selectedPosition.value) {
+      userMessage = '❌ Veuillez sélectionner une position sur la carte.';
+    }
+    
+    toastMessage.value = userMessage;
     showToast.value = true;
   } finally {
     isLoading.value = false;
@@ -329,6 +339,26 @@ const submitForm = async () => {
 <style scoped>
 .form-container {
   padding: 1rem;
+}
+
+.form-container ion-item {
+  --padding-top: 20px;
+  --padding-bottom: 8px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  margin-bottom: 16px;
+}
+
+.form-container ion-label {
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.form-container ion-input,
+.form-container ion-textarea,
+.form-container ion-select {
+  --padding-top: 8px;
+  --padding-bottom: 8px;
 }
 
 .map-selector {
