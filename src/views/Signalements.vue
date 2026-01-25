@@ -180,9 +180,9 @@ const getStatusColor = (status: string): string => {
 
 const getStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
-    'signale': 'Signalé',
-    'en_cours': 'En cours',
-    'termine': 'Terminé'
+    'Signalé': 'Signalé',
+    'En cours': 'En cours',
+    'Résolu': 'Terminé'
   };
   return labels[status] || status;
 };

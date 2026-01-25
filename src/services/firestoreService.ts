@@ -33,8 +33,9 @@ export class FirestoreService {
           surface: data.surface || 0,
           avancement: data.avancement || 0,
           budget: data.budget || 0,
-          dernier_statut: data.dernier_statut || 'signale',
+          dernier_statut: data.dernier_statut || 'Signalé',
           entreprise: data.entreprise,
+          email: data.email,
           id_user: data.id_user
         };
 
@@ -88,6 +89,7 @@ export class FirestoreService {
         description: signalement.description,
         localisation: localisationGeoPoint,
         surface: signalement.surface,
+        email: signalement.email || null,
         id_user: signalement.id_user || null,
         createdAt: serverTimestamp()
       };
@@ -112,10 +114,9 @@ export class FirestoreService {
    */
   private static mapStatusToEnum(status: string): SignalementStatus {
     const statusMap: { [key: string]: SignalementStatus } = {
-      'termine': SignalementStatus.TERMINE,
-      'en_cours': SignalementStatus.EN_COURS,
-      'signale': SignalementStatus.SIGNALE,
-      'en cours': SignalementStatus.EN_COURS,
+      'Résolu': SignalementStatus.TERMINE,
+      'En cours': SignalementStatus.EN_COURS,
+      'Signalé': SignalementStatus.SIGNALE,
     };
 
     return statusMap[status?.toLowerCase()] || SignalementStatus.SIGNALE;

@@ -266,9 +266,9 @@ const addSignalementsToMap = () => {
 
     // Créer le popup avec les informations du signalement
     const statusLabel = {
-      'signale': 'Signalé',
-      'en_cours': 'En cours',
-      'termine': 'Terminé'
+      'Signalé': 'Signalé',
+      'En cours': 'En cours',
+      'Résolu': 'Terminé'
     }[signalement.dernier_statut] || signalement.dernier_statut;
 
     const popupContent = `

@@ -1,7 +1,7 @@
 export enum SignalementStatus {
-  SIGNALE = 'signalé',
-  EN_COURS = 'en_cours',
-  TERMINE = 'résolu'
+  SIGNALE = 'Signalé',
+  EN_COURS = 'En cours',
+  TERMINE = 'Résolu'
 }
 
 export interface Entreprise {
@@ -20,13 +20,14 @@ export interface Signalement {
   dernier_statut: string;
   entreprise: string;
   id_user?: string;
+  email?: string;
 }
 
 // Couleurs selon le statut
 export const STATUS_COLORS: Record<string, string> = {
-  'signale': '#EF4444',      // Rouge
-  'en_cours': '#F59E0B',     // Orange
-  'termine': '#10B981'       // Vert
+  'Signalé': '#EF4444',      // Rouge
+  'En cours': '#F59E0B',     // Orange
+  'Résolu': '#10B981'       // Vert
 };
 
 export const STATUS_LABELS: Record<SignalementStatus, string> = {

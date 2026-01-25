@@ -83,9 +83,9 @@
             <ion-item>
               <ion-label position="floating">Statut</ion-label>
               <ion-select v-model="form.dernier_statut" placeholder="Sélectionner" required>
-                <ion-select-option value="signale">Signalé</ion-select-option>
-                <ion-select-option value="en_cours">En cours</ion-select-option>
-                <ion-select-option value="termine">Terminé</ion-select-option>
+                <ion-select-option value="Signalé">Signalé</ion-select-option>
+                <ion-select-option value="En cours">En cours</ion-select-option>
+                <ion-select-option value="Résolu">Terminé</ion-select-option>
               </ion-select>
             </ion-item>
           </ion-card-content>
@@ -188,7 +188,7 @@ const form = ref<{
   surface: null as number | null,
   budget: null as number | null,
   avancement: 0 as number | null,
-  dernier_statut: 'signale'
+  dernier_statut: 'Signalé'
 });
 
 const defaultIcon = L.icon({
@@ -273,7 +273,7 @@ const resetForm = () => {
     surface: null,
     budget: null,
     avancement: 0,
-    dernier_statut: 'signale'
+    dernier_statut: 'Signalé'
   };
   selectedPosition.value = null;
   clearPosition();
@@ -287,6 +287,7 @@ const submitForm = async () => {
   try {
     const currentUser = AuthService.getCurrentUser();
     const userId = currentUser?.uid || undefined;
+    const userEmail = currentUser?.email || undefined;
 
     await addSignalementToFirestore({
       latitude: selectedPosition.value.lat,
@@ -297,7 +298,8 @@ const submitForm = async () => {
       avancement: form.value.avancement || 0,
       entreprise: form.value.entreprise,
       dernier_statut: form.value.dernier_statut,
-      id_user: userId
+      id_user: userId,
+      email: userEmail
     });
 
     // Afficher le message de succès
@@ -321,7 +323,7 @@ const submitForm = async () => {
     
     let userMessage = '❌ Impossible de créer le signalement. Vérifiez vos informations.';
     if (error.message && error.message.includes('permission')) {
-      userMessage = '❌ Permission refusée. Vous n\'avez pas les droits nécessaires.';
+      userMessage = '❌ Permission refusée. Vous n\'avez pas les droits nécessaires :' + error.message;
     } else if (error.message && error.message.includes('network')) {
       userMessage = '❌ Erreur réseau. Vérifiez votre connexion internet.';
     } else if (!selectedPosition.value) {
