@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
+    <ion-header>
       <ion-toolbar>
         <ion-title>Carte</ion-title>
         <ion-buttons slot="end">
@@ -16,77 +16,74 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true" class="map-content">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Carte</ion-title>
-        </ion-toolbar>
-      </ion-header>
+    <ion-content :fullscreen="false" :scrollY="false" class="map-content">
+      <!-- Container principal qui prend tout l'espace -->
+      <div class="map-wrapper">
+        <!-- La carte -->
+        <div id="map" ref="mapContainer"></div>
+        
+        <!-- Barre d'actions en bas -->
+        <div class="map-bottom-bar">
+          <!-- Légende compacte -->
+          <div class="map-legend-compact">
+            <div class="legend-item-compact" title="Signalé">
+              <span class="legend-dot danger"></span>
+              <span class="legend-text">Signalé</span>
+            </div>
+            <div class="legend-item-compact" title="En cours">
+              <span class="legend-dot warning"></span>
+              <span class="legend-text">En cours</span>
+            </div>
+            <div class="legend-item-compact" title="Terminé">
+              <span class="legend-dot success"></span>
+              <span class="legend-text">Terminé</span>
+            </div>
+          </div>
 
-      <!-- Filtres par statut -->
-      <div class="map-filters">
-        <!-- Toggle "Mes signalements uniquement" (visible seulement si connecté) -->
-        <div v-if="authUser" class="filter-toggle-container">
-          <ion-item>
-            <ion-label>Mes signalements uniquement</ion-label>
-            <ion-toggle 
-              v-model="showOnlyMySignalements"
-              slot="end"
-            ></ion-toggle>
-          </ion-item>
+          <!-- Bouton filtre mes signalements (si connecté) -->
+          <button 
+            v-if="authUser" 
+            class="filter-button"
+            :class="{ active: showOnlyMySignalements }"
+            @click="showOnlyMySignalements = !showOnlyMySignalements"
+          >
+            <ion-icon name="eye"></ion-icon>
+            <span>{{ showOnlyMySignalements ? 'Tous les signalements' : 'Voir mes signalements' }}</span>
+          </button>
         </div>
-      </div>
+        
+        <!-- Loading indicator overlay -->
+        <div v-if="loading" class="loading-overlay">
+          <div class="loading-content">
+            <ion-spinner name="crescent" color="primary"></ion-spinner>
+            <p>Localisation en cours...</p>
+          </div>
+        </div>
 
-      <div id="map" ref="mapContainer"></div>
-      
-      <!-- Légende des statuts -->
-      <div class="map-legend">
-        <div class="legend-title">Statuts</div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #EF4444;"></div>
-          <span>Signalé</span>
+        <!-- Badge de précision -->
+        <div v-if="precision && !loading" class="info-badge">
+          <span>📡 ±{{ Math.round(precision) }}m</span>
+          <ion-button fill="clear" size="small" @click="retryGeolocation">
+            <ion-icon name="refresh"></ion-icon>
+          </ion-button>
         </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #F59E0B;"></div>
-          <span>En cours</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color" style="background-color: #10B981;"></div>
-          <span>Terminé</span>
-        </div>
-      </div>
-      
-      <!-- Loading indicator overlay -->
-      <div v-if="loading" class="loading-overlay">
-        <div class="loading-content">
-          <ion-spinner name="crescent" color="success"></ion-spinner>
-          <p>Localisation en cours...</p>
-        </div>
-      </div>
-
-      <div v-if="error" class="error-message">
-        <ion-alert 
-          :is-open="!!error" 
-          header="Erreur de localisation"
-          :message="error"
-          :buttons="['OK']"
-          @didDismiss="error = null"
-        ></ion-alert>
       </div>
 
-      <div v-if="precision" class="info-badge">
-        <p>Précision: ±{{ Math.round(precision) }}m</p>
-        <ion-button @click="retryGeolocation" size="small" expand="block">
-          Relocaliser
-        </ion-button>
-      </div>
+      <ion-alert 
+        v-if="error"
+        :is-open="!!error" 
+        header="Erreur de localisation"
+        :message="error"
+        :buttons="['OK']"
+        @didDismiss="error = null"
+      ></ion-alert>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton, IonSegment, IonSegmentButton, IonButtons, IonIcon, IonToggle, IonItem, IonLabel } from '@ionic/vue';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonSpinner, IonAlert, IonButton, IonSegment, IonSegmentButton, IonButtons, IonIcon, IonToggle, IonItem, IonLabel, IonChip } from '@ionic/vue';
 import { logOut, personCircle } from 'ionicons/icons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -299,29 +296,145 @@ watch(() => showOnlyMySignalements.value, () => {
 </script>
 
 <style scoped>
-#map {
+.map-content {
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --overflow: hidden;
+}
+
+.map-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
-  min-height: 500px;
-  border-radius: 8px;
-}
-
-.map-content {
-  --padding-bottom: 0;
-  background: #f8fafc;
-  position: relative;
-}
-
-.loading-indicator {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  gap: 1rem;
-  color: #64748b;
+  overflow: hidden;
 }
 
+#map {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Barre d'actions en bas */
+.map-bottom-bar {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 40px);
+  max-width: 400px;
+}
+
+/* Légende compacte */
+.map-legend-compact {
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 8px 14px;
+  border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+}
+
+.legend-item-compact {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+.legend-item-compact:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot.danger {
+  background: #EF4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25);
+}
+
+.legend-dot.warning {
+  background: #F59E0B;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+.legend-dot.success {
+  background: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.legend-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  white-space: nowrap;
+}
+
+/* Bouton filtre mes signalements */
+.filter-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+}
+
+.filter-button ion-icon {
+  font-size: 18px;
+  color: var(--route-primary, #1a5f7a);
+}
+
+.filter-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.filter-button:active {
+  transform: translateY(0);
+}
+
+.filter-button.active {
+  background: var(--route-primary, #1a5f7a);
+  color: white;
+}
+
+.filter-button.active ion-icon {
+  color: white;
+}
+
+/* Loading overlay */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -329,128 +442,86 @@ watch(() => showOnlyMySignalements.value, () => {
   right: 0;
   bottom: 0;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   background: rgba(248, 250, 252, 0.9);
   backdrop-filter: blur(4px);
-  z-index: 100;
-  gap: 1rem;
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1001;
 }
 
 .loading-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
+  padding: 24px 32px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .loading-content p {
-  color: #64748b;
+  margin: 0;
+  color: var(--text-secondary, #64748b);
   font-weight: 500;
   font-size: 14px;
 }
 
 .loading-content ion-spinner {
-  --color: #10b981;
+  width: 32px;
+  height: 32px;
 }
 
-.error-message {
-  padding: 1rem;
-  background-color: #fee2e2;
-  color: #7f1d1d;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  margin: 1rem;
-  font-weight: 500;
-}
-
+/* Badge de précision */
 .info-badge {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: white;
-  padding: 12px 16px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 400;
-  max-width: 200px;
-  border: 1px solid #e2e8f0;
-}
-
-.info-badge p {
-  margin: 6px 0;
-  font-size: 12px;
-  color: #475569;
-  font-weight: 500;
-}
-
-.map-legend {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: white;
-  padding: 12px 16px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 400;
-  border: 1px solid #e2e8f0;
-  min-width: 150px;
-}
-
-.legend-title {
-  font-weight: 600;
-  font-size: 12px;
-  color: #1e293b;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.legend-item {
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
-  font-size: 13px;
-  color: #475569;
-}
-
-.legend-item:last-child {
-  margin-bottom: 0;
-}
-
-.legend-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.map-filters {
-  padding: 1rem;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  position: relative;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-ion-segment {
-  width: 100%;
-  --indicator-color: #10b981;
-}
-
-.filter-toggle-container {
-  margin-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-  padding-top: 1rem;
-}
-
-ion-button {
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 6px 10px 6px 14px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+}
+
+.info-badge ion-button {
+  --padding-start: 6px;
+  --padding-end: 6px;
+  margin: 0;
+  height: 28px;
+}
+
+.info-badge ion-button ion-icon {
+  font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 360px) {
+  .legend-text {
+    display: none;
+  }
+  
+  .legend-item-compact {
+    padding: 6px;
+  }
+  
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .filter-button {
+    font-size: 13px;
+    padding: 12px 16px;
+  }
 }
 </style>

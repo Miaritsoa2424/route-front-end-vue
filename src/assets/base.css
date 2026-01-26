@@ -1,53 +1,100 @@
-/* color palette from <https://github.com/vuejs/theme> */
+/* 🚧 Route Signalement Antananarivo - Design System */
+/* Palette de couleurs inspirée des routes et de Madagascar */
+
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  /* Couleurs principales - Thème Route */
+  --route-primary: #1a5f7a;        /* Bleu route/signalisation */
+  --route-primary-light: #2980b9;
+  --route-primary-dark: #134b5f;
+  
+  --route-secondary: #e67e22;      /* Orange travaux/alerte */
+  --route-secondary-light: #f39c12;
+  --route-secondary-dark: #d35400;
+  
+  --route-accent: #27ae60;         /* Vert succès/résolu */
+  --route-accent-light: #2ecc71;
+  --route-accent-dark: #1e8449;
+  
+  --route-danger: #e74c3c;         /* Rouge urgence/signalé */
+  --route-danger-light: #ec7063;
+  --route-danger-dark: #c0392b;
+  
+  --route-warning: #f1c40f;        /* Jaune attention */
+  --route-warning-light: #f4d03f;
+  --route-warning-dark: #d4ac0d;
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
-
-  --vt-c-indigo: #2c3e50;
-
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
-
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-}
-
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
-  --section-gap: 160px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
-
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-  }
+  /* Couleurs de fond */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e2e8f0;
+  --bg-dark: #0f172a;
+  --bg-dark-soft: #1e293b;
+  
+  /* Couleurs de texte */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-light: #f8fafc;
+  
+  /* Bordures et ombres */
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--route-primary) 0%, var(--route-primary-light) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--route-secondary) 0%, var(--route-secondary-light) 100%);
+  --gradient-success: linear-gradient(135deg, var(--route-accent) 0%, var(--route-accent-light) 100%);
+  --gradient-danger: linear-gradient(135deg, var(--route-danger) 0%, var(--route-danger-light) 100%);
+  --gradient-dark: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-dark-soft) 100%);
+  --gradient-hero: linear-gradient(135deg, #1a5f7a 0%, #2980b9 50%, #27ae60 100%);
+  
+  /* Espacement */
+  --section-gap: 2rem;
+  --card-radius: 16px;
+  --button-radius: 12px;
+  
+  /* Ionic overrides */
+  --ion-color-primary: var(--route-primary);
+  --ion-color-primary-rgb: 26, 95, 122;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: var(--route-primary-dark);
+  --ion-color-primary-tint: var(--route-primary-light);
+  
+  --ion-color-secondary: var(--route-secondary);
+  --ion-color-secondary-rgb: 230, 126, 34;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-shade: var(--route-secondary-dark);
+  --ion-color-secondary-tint: var(--route-secondary-light);
+  
+  --ion-color-success: var(--route-accent);
+  --ion-color-success-rgb: 39, 174, 96;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-shade: var(--route-accent-dark);
+  --ion-color-success-tint: var(--route-accent-light);
+  
+  --ion-color-danger: var(--route-danger);
+  --ion-color-danger-rgb: 231, 76, 60;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-shade: var(--route-danger-dark);
+  --ion-color-danger-tint: var(--route-danger-light);
+  
+  --ion-color-warning: var(--route-warning);
+  --ion-color-warning-rgb: 241, 196, 15;
+  --ion-color-warning-contrast: #1e293b;
+  --ion-color-warning-shade: var(--route-warning-dark);
+  --ion-color-warning-tint: var(--route-warning-light);
+  
+  --ion-background-color: var(--bg-primary);
+  --ion-text-color: var(--text-primary);
+  --ion-toolbar-background: var(--route-primary);
+  --ion-toolbar-color: var(--text-light);
+  --ion-tab-bar-background: var(--bg-secondary);
+  --ion-tab-bar-color: var(--text-secondary);
+  --ion-tab-bar-color-selected: var(--route-primary);
 }
 
 *,
@@ -60,14 +107,12 @@
 
 body {
   min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  transition: color 0.3s ease, background-color 0.3s ease;
   line-height: 1.6;
   font-family:
-    Inter,
+    'Inter',
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
@@ -83,4 +128,130 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Ionic Styling */
+ion-toolbar {
+  --background: var(--gradient-primary);
+  --color: var(--text-light);
+  --border-width: 0;
+}
+
+ion-title {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+ion-tab-bar {
+  --background: #ffffff;
+  --border: none;
+  border-top: 1px solid var(--border-light);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  height: auto;
+  min-height: 56px;
+  display: flex !important;
+  visibility: visible !important;
+}
+
+ion-tab-button {
+  --color: var(--text-secondary);
+  --color-selected: var(--route-primary);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  min-height: 50px;
+}
+
+ion-tab-button.tab-selected {
+  --color: var(--route-primary);
+}
+
+ion-tab-button ion-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+ion-button {
+  --border-radius: var(--button-radius);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: none;
+  transition: all 0.3s ease;
+}
+
+ion-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+ion-card {
+  --background: var(--bg-secondary);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  margin: 16px;
+  overflow: hidden;
+}
+
+ion-card-header {
+  padding: 20px 20px 12px;
+}
+
+ion-card-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+ion-card-content {
+  padding: 12px 20px 20px;
+}
+
+ion-item {
+  --background: var(--bg-secondary);
+  --border-color: var(--border-light);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 0;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+ion-input, ion-textarea, ion-select {
+  --background: var(--bg-primary);
+  --padding-start: 12px;
+  --padding-end: 12px;
+  border-radius: 8px;
+}
+
+ion-badge {
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 6px;
+  --padding-bottom: 6px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--route-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--route-primary-dark);
 }
