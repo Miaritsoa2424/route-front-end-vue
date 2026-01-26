@@ -1,35 +1,182 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
   font-weight: normal;
 }
 
-a,
-.green {
+/* Links styling */
+a {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  color: var(--route-primary);
+  transition: all 0.3s ease;
+  padding: 3px 6px;
+  border-radius: 4px;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+a:hover {
+  color: var(--route-primary-light);
+  background-color: rgba(26, 95, 122, 0.1);
+}
+
+/* Utility Classes */
+.text-primary { color: var(--route-primary) !important; }
+.text-secondary { color: var(--route-secondary) !important; }
+.text-success { color: var(--route-accent) !important; }
+.text-danger { color: var(--route-danger) !important; }
+.text-warning { color: var(--route-warning) !important; }
+.text-muted { color: var(--text-muted) !important; }
+
+.bg-primary { background: var(--gradient-primary) !important; }
+.bg-secondary { background: var(--gradient-secondary) !important; }
+.bg-success { background: var(--gradient-success) !important; }
+.bg-danger { background: var(--gradient-danger) !important; }
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Status indicators */
+.status-signale {
+  background: var(--gradient-danger);
+  color: white;
+}
+
+.status-en-cours {
+  background: var(--gradient-secondary);
+  color: white;
+}
+
+.status-resolu {
+  background: var(--gradient-success);
+  color: white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideInUp 0.5s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Road-themed decorations */
+.road-stripe {
+  width: 100%;
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--route-warning) 0px,
+    var(--route-warning) 20px,
+    transparent 20px,
+    transparent 40px
+  );
+  margin: 1rem 0;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Empty states */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-state ion-icon {
+  font-size: 64px;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.empty-state p {
+  font-size: 14px;
+  max-width: 280px;
+}
+
+/* Loading states */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 1rem;
+}
+
+.loading-container ion-spinner {
+  --color: var(--route-primary);
+  width: 48px;
+  height: 48px;
+}
+
+.loading-container p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  ion-card {
+    margin: 12px;
+  }
+  
+  ion-card-header {
+    padding: 16px 16px 8px;
+  }
+  
+  ion-card-content {
+    padding: 8px 16px 16px;
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+@media (min-width: 768px) {
+  ion-content {
+    --padding-start: 2rem;
+    --padding-end: 2rem;
   }
 }

@@ -53,7 +53,7 @@
 
             <!-- Entreprise (Select) -->
             <ion-item>
-              <ion-label position="floating">Entreprise</ion-label>
+              <ion-label position="stacked">Entreprise</ion-label>
               <ion-select v-model="form.entreprise" placeholder="Sélectionner une entreprise" required>
                 <ion-select-option v-for="ent in entreprisesDisponibles" :key="ent.id" :value="ent.nom">
                   {{ ent.nom }}
@@ -81,7 +81,7 @@
 
             <!-- Statut -->
             <ion-item>
-              <ion-label position="floating">Statut</ion-label>
+              <ion-label position="stacked">Statut</ion-label>
               <ion-select v-model="form.dernier_statut" placeholder="Sélectionner" required>
                 <ion-select-option value="Signalé">Signalé</ion-select-option>
                 <ion-select-option value="En cours">En cours</ion-select-option>
@@ -341,34 +341,89 @@ const submitForm = async () => {
 <style scoped>
 .form-container {
   padding: 1rem;
+  background: var(--bg-primary);
+  min-height: 100%;
+}
+
+.form-container ion-card {
+  margin: 0 0 1rem 0;
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+}
+
+.form-container ion-card-header {
+  background: var(--gradient-primary);
+  padding: 16px 20px;
+}
+
+.form-container ion-card-title {
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.form-container ion-card-content {
+  padding: 20px;
 }
 
 .form-container ion-item {
-  --padding-top: 20px;
-  --padding-bottom: 8px;
-  --padding-start: 12px;
-  --padding-end: 12px;
+  --padding-top: 16px;
+  --padding-bottom: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
   margin-bottom: 16px;
+  --background: var(--bg-primary);
+  border: 2px solid var(--border-light);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.form-container ion-item:focus-within {
+  border-color: var(--route-primary);
+  box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.1);
 }
 
 .form-container ion-label {
   margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-container ion-label[position="floating"] {
+  transform: translateY(50%) scale(1);
+}
+
+.form-container ion-item.item-has-value ion-label[position="floating"],
+.form-container ion-item.item-has-focus ion-label[position="floating"] {
+  transform: translateY(0) scale(0.82);
+}
+
+.form-container ion-select {
+  --padding-top: 20px;
+  --padding-bottom: 8px;
   font-weight: 500;
+  min-height: 50px;
 }
 
 .form-container ion-input,
-.form-container ion-textarea,
-.form-container ion-select {
+.form-container ion-textarea {
   --padding-top: 8px;
   --padding-bottom: 8px;
+  font-weight: 500;
 }
 
 .map-selector {
   width: 100%;
   height: 300px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 1rem;
-  border: 2px solid #e0e0e0;
+  border: 3px solid var(--border-light);
+  overflow: hidden;
 }
 
 .map-selector-modal {
@@ -379,31 +434,63 @@ const submitForm = async () => {
 
 .position-info {
   margin-top: 1rem;
-  padding: 1rem;
-  background-color: #f0f8ff;
-  border-radius: 8px;
-  border-left: 4px solid #2196F3;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  border-radius: 12px;
+  border-left: 4px solid var(--route-primary);
 }
 
 .position-info p {
   margin: 0.25rem 0;
   font-size: 14px;
+  color: var(--text-primary);
+}
+
+.position-info p:first-child {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 0.75rem;
+}
+
+.position-info strong {
+  color: var(--route-primary);
+}
+
+.position-info ion-button {
+  margin-top: 1rem;
+  --background: var(--bg-secondary);
+  --color: var(--text-primary);
+  --border-radius: 8px;
+  font-weight: 600;
 }
 
 .no-position {
   margin-top: 1rem;
-  padding: 1rem;
-  background-color: #fff3cd;
-  border-radius: 8px;
-  border-left: 4px solid #ffc107;
-  color: #856404;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-radius: 12px;
+  border-left: 4px solid var(--route-warning);
+  color: #92400e;
+  font-weight: 500;
+}
+
+.no-position::before {
+  content: '📍';
+  margin-right: 8px;
 }
 
 .photo-section {
   margin-top: 1.5rem;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 1.25rem;
+  border: 2px dashed var(--border-medium);
+  border-radius: 12px;
+  background: var(--bg-primary);
+  transition: all 0.3s ease;
+}
+
+.photo-section:hover {
+  border-color: var(--route-primary);
+  background: rgba(26, 95, 122, 0.02);
 }
 
 .photo-preview {
@@ -414,16 +501,54 @@ const submitForm = async () => {
 .preview-image {
   max-width: 100%;
   max-height: 300px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 1rem;
+  box-shadow: var(--shadow-md);
 }
 
 .submit-button {
   margin-top: 2rem;
   margin-bottom: 1rem;
+  --background: var(--gradient-success);
+  --box-shadow: var(--shadow-md);
+  height: 54px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  --box-shadow: var(--shadow-lg);
+}
+
+.submit-button:disabled {
+  --background: var(--bg-tertiary);
+  opacity: 0.7;
 }
 
 .reset-button {
   margin-bottom: 2rem;
+  --background: transparent;
+  --color: var(--text-secondary);
+  --border-radius: var(--button-radius);
+  border: 2px solid var(--border-medium);
+  font-weight: 600;
+}
+
+.reset-button:hover {
+  --background: var(--bg-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Modal styling */
+ion-modal ion-toolbar {
+  --background: var(--gradient-primary);
+  --color: white;
+}
+
+ion-modal ion-button {
+  --color: white;
+  font-weight: 600;
 }
 </style>
