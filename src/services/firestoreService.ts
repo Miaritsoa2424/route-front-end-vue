@@ -1,5 +1,5 @@
 // import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, getDoc, setDoc, where, query, updateDoc } from 'firebase/firestore';
 import type { Signalement, Entreprise } from '../data/signalements';
 import { SignalementStatus } from '../data/signalements';
 
@@ -12,9 +12,12 @@ export class FirestoreService {
    */
   static async getAttempts(email: string): Promise<number> {
     try {
-      const docRef = doc(db, 'tentatives', email);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+      const q = query(collection(db, 'tentative'), where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        console.log("Tentatives pour " + email + ": " + docSnap.data().tentative);
+        
         return docSnap.data().tentative || 0;
       }
       return 0;
@@ -29,9 +32,16 @@ export class FirestoreService {
    */
   static async incrementAttempts(email: string): Promise<number> {
     try {
-      const current = await this.getAttempts(email);
+      const q = query(collection(db, 'tentative'), where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      const current = querySnapshot.empty ? 0 : querySnapshot.docs[0].data().tentative || 0;
       const newAttempts = current + 1;
-      await setDoc(doc(db, 'tentatives', email), { email, tentative: newAttempts });
+      if (querySnapshot.empty) {
+        await addDoc(collection(db, 'tentative'), { email, tentative: newAttempts });
+      } else {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, { tentative: newAttempts });
+      }
       return newAttempts;
     } catch (error) {
       console.error('Erreur lors de l\'incrémentation des tentatives:', error);
@@ -44,7 +54,14 @@ export class FirestoreService {
    */
   static async resetAttempts(email: string): Promise<void> {
     try {
-      await setDoc(doc(db, 'tentatives', email), { email, tentative: 0 });
+      const q = query(collection(db, 'tentative'), where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, { tentative: 0 });
+      } else {
+        await addDoc(collection(db, 'tentative'), { email, tentative: 0 });
+      }
     } catch (error) {
       console.error('Erreur lors de la réinitialisation des tentatives:', error);
     }
