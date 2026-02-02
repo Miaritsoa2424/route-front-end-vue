@@ -1,10 +1,54 @@
-import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp } from 'firebase/firestore';
+// import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import type { Signalement, Entreprise } from '../data/signalements';
 import { SignalementStatus } from '../data/signalements';
 
 const db = getFirestore();
 
 export class FirestoreService {
+
+  /**
+   * Récupérer le nombre de tentatives pour un email
+   */
+  static async getAttempts(email: string): Promise<number> {
+    try {
+      const docRef = doc(db, 'tentatives', email);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().tentative || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des tentatives:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Incrémenter le nombre de tentatives pour un email
+   */
+  static async incrementAttempts(email: string): Promise<number> {
+    try {
+      const current = await this.getAttempts(email);
+      const newAttempts = current + 1;
+      await setDoc(doc(db, 'tentatives', email), { email, tentative: newAttempts });
+      return newAttempts;
+    } catch (error) {
+      console.error('Erreur lors de l\'incrémentation des tentatives:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Réinitialiser les tentatives pour un email (après connexion réussie)
+   */
+  static async resetAttempts(email: string): Promise<void> {
+    try {
+      await setDoc(doc(db, 'tentatives', email), { email, tentative: 0 });
+    } catch (error) {
+      console.error('Erreur lors de la réinitialisation des tentatives:', error);
+    }
+  }
   /**
    * Récupérer tous les signalements de Firestore
    */

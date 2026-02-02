@@ -5,7 +5,8 @@
         <!-- Header -->
         <div class="login-header">
           <h1>Route Signalement</h1>
-          <p>Connectez-vous à votre compte</p>
+          <p v-if="!isBlocked">Connectez-vous à votre compte</p>
+          <p v-else class="blocked-message">Votre compte est bloqué après 3 tentatives. Contactez un administrateur pour le débloquer.</p>
         </div>
 
         <!-- Form -->
@@ -17,6 +18,7 @@
               v-model="email"
               type="email"
               placeholder="votre@email.com"
+              :disabled="isBlocked"
               required
             />
           </IonItem>
@@ -28,6 +30,7 @@
               v-model="password"
               type="password"
               placeholder="••••••••"
+              :disabled="isBlocked"
               required
             />
           </IonItem>
@@ -44,7 +47,6 @@
             <span>{{ successMessage }}</span>
           </div>
 
-          <!-- Login Button -->
           <IonButton
             type="submit"
             expand="block"
@@ -83,6 +85,7 @@ const password = ref('');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
+const isBlocked = ref(false);  // Flag pour bloquer l'UI
 
 const handleLogin = async () => {
   errorMessage.value = '';
@@ -99,25 +102,32 @@ const handleLogin = async () => {
   try {
     await AuthService.login(email.value, password.value);
     successMessage.value = 'Connexion réussie! Redirection...';
+    isBlocked.value = false;  // Réinitialiser si connexion réussie
     
     // Rediriger vers la Carte après 1 seconde
     setTimeout(() => {
       router.push('/map');
     }, 1000);
   } catch (error: any) {
-    // Traduire les messages d'erreur Firebase
-    let userMessage = 'Erreur de connexion. Veuillez vérifier vos identifiants.';
+    // Gérer les erreurs
+    let userMessage = 'Erreur de connexion.';
     
-    if (error.code === 'auth/user-not-found') {
-      userMessage = 'Cet email n\'existe pas. Vérifiez votre saisie.';
-    } else if (error.code === 'auth/wrong-password') {
-      userMessage = 'Mot de passe incorrect. Réessayez.';
-    } else if (error.code === 'auth/invalid-email') {
-      userMessage = 'Adresse email invalide.';
-    } else if (error.code === 'auth/too-many-requests') {
-      userMessage = 'Trop de tentatives. Réessayez plus tard.';
-    } else if (error.code === 'auth/network-request-failed') {
-      userMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
+    if (error.message.includes('bloqué')) {
+      userMessage = error.message;
+      isBlocked.value = true;  // Bloquer l'UI
+    } else {
+      // Autres erreurs Firebase
+      if (error.code === 'auth/user-not-found') {
+        userMessage = 'Cet email n\'existe pas.';
+      } else if (error.code === 'auth/wrong-password') {
+        userMessage = 'Mot de passe incorrect.';
+      } else if (error.code === 'auth/invalid-email') {
+        userMessage = 'Adresse email invalide.';
+      } else if (error.code === 'auth/too-many-requests') {
+        userMessage = 'Trop de tentatives. Réessayez plus tard.';
+      } else if (error.code === 'auth/network-request-failed') {
+        userMessage = 'Erreur réseau.';
+      }
     }
     
     errorMessage.value = userMessage;
