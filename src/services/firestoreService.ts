@@ -1,5 +1,6 @@
+// import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, writeBatch } from 'firebase/firestore';
 // import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp } from 'firebase/firestore';
-import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, getDoc, setDoc, where, query, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, getDoc, setDoc, where, query, updateDoc, writeBatch } from 'firebase/firestore';
 import type { Signalement, Entreprise } from '../data/signalements';
 import { SignalementStatus } from '../data/signalements';
 
@@ -97,7 +98,8 @@ export class FirestoreService {
           dernier_statut: data.dernier_statut || 'Signalé',
           entreprise: data.entreprise,
           email: data.email,
-          id_user: data.id_user
+          id_user: data.id_user,
+          photos: data.photos || []
         };
 
         signalements.push(signalement);
@@ -159,6 +161,11 @@ export class FirestoreService {
 
       console.log('✅ Signalement ajouté avec ID:', docRef.id);
 
+      // Ajouter les photos dans la sous-collection 'images'
+      if (signalement.photos && signalement.photos.length > 0) {
+        await this.addPhotosToSignalement(docRef.id, signalement.photos);
+      }
+
       // Retourner le signalement avec l'ID généré
       return {
         ...signalement,
@@ -166,6 +173,63 @@ export class FirestoreService {
       };
     } catch (error) {
       console.error('❌ Erreur lors de l\'ajout du signalement:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Récupérer les photos d'un signalement
+   */
+  static async getSignalementPhotos(signalementId: string): Promise<Array<{id: string; description: string; lien: string; date_ajout: any}>> {
+    try {
+      const imagesCollection = collection(db, 'signalement', signalementId, 'images');
+      const querySnapshot = await getDocs(imagesCollection);
+      const photos: Array<{id: string; description: string; lien: string; date_ajout: any}> = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        photos.push({
+          id: doc.id,
+          description: data.description || '',
+          lien: data.lien || '',
+          date_ajout: data.date_ajout
+        });
+      });
+
+      return photos.sort((a, b) => {
+        // Trier par date (les plus récentes en premier)
+        if (a.date_ajout && b.date_ajout) {
+          return b.date_ajout.toDate().getTime() - a.date_ajout.toDate().getTime();
+        }
+        return 0;
+      });
+    } catch (error) {
+      console.error('Erreur lors de la récupération des photos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Ajouter les photos à la sous-collection 'images' d'un signalement
+   */
+  private static async addPhotosToSignalement(signalementId: string, photos: string[]): Promise<void> {
+    try {
+      const batch = writeBatch(db);
+      const imagesCollection = collection(db, 'signalement', signalementId, 'images');
+
+      photos.forEach((photoDataUrl, index) => {
+        const imageDocRef = doc(imagesCollection);
+        batch.set(imageDocRef, {
+          date_ajout: serverTimestamp(),
+          description: `image${index + 1}`,
+          lien: photoDataUrl // Data URL de l'image
+        });
+      });
+
+      await batch.commit();
+      console.log(`✅ ${photos.length} photo(s) ajoutée(s) au signalement ${signalementId}`);
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'ajout des photos:', error);
       throw error;
     }
   }

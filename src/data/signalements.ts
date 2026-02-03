@@ -21,6 +21,7 @@ export interface Signalement {
   entreprise: string;
   id_user?: string;
   email?: string;
+  photos?: string[];
 }
 
 // Couleurs selon le statut

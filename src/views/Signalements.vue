@@ -96,6 +96,13 @@
               <div class="coordinates">
                 <small>📍 {{ signalement.latitude.toFixed(4) }}, {{ signalement.longitude.toFixed(4) }}</small>
               </div>
+
+              <div class="signalement-buttons">
+                <ion-button fill="outline" size="small" @click="openPhotosModal(signalement)">
+                  <ion-icon slot="start" name="image"></ion-icon>
+                  Photos
+                </ion-button>
+              </div>
             </div>
           </ion-item>
         </ion-list>
@@ -105,6 +112,34 @@
           <p>Aucun signalement trouvé</p>
         </div>
       </div>
+
+      <!-- Modal Photos -->
+      <ion-modal :is-open="showPhotosModal" @did-dismiss="closePhotosModal">
+        <ion-header :translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start">
+              <ion-button color="medium" @click="closePhotosModal">Fermer</ion-button>
+            </ion-buttons>
+            <ion-title>{{ selectedSignalementForPhotos?.description }}</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <div class="photos-modal-content">
+            <div v-if="modalPhotos.length > 0" class="photos-grid">
+              <div v-for="photo in modalPhotos" :key="photo.id" class="photo-card">
+                <img :src="photo.lien" :alt="photo.description" class="modal-photo-image" />
+                <div class="photo-info">
+                  <p class="photo-description">{{ photo.description }}</p>
+                  <p class="photo-date">{{ formatDate(photo.date_ajout) }}</p>
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-photos">
+              <p>📸 Aucune photo pour ce signalement</p>
+            </div>
+          </div>
+        </ion-content>
+      </ion-modal>
     </ion-content>
   </ion-page>
 </template>
@@ -126,7 +161,8 @@ import {
   IonIcon,
   IonButtons,
   IonToggle,
-  IonLabel
+  IonLabel,
+  IonModal
 } from '@ionic/vue';
 import { addCircle } from 'ionicons/icons';
 import {STATUS_COLORS, type Signalement } from '../data/signalements';
@@ -134,11 +170,15 @@ import {getAllSignalements } from '../stores/signalementsStore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/firebase';
 import { AuthService } from '../services/authService';
+import { FirestoreService } from '../services/firestoreService';
 import type { User } from 'firebase/auth';
 
 const selectedStatus = ref<string>('tous');
 const authUser = ref<User | null>(null);
 const showOnlyMySignalements = ref<boolean>(false);
+const showPhotosModal = ref<boolean>(false);
+const selectedSignalementForPhotos = ref<Signalement | null>(null);
+const modalPhotos = ref<Array<{id: string; description: string; lien: string; date_ajout: any}>>([]);
 
 // Écouter les changements d'authentification
 onMounted(() => {
@@ -208,6 +248,39 @@ const totalSurface = computed(() => {
 const totalBudget = computed(() => {
   return allSignalements.value.reduce((sum: number, s: Signalement) => sum + (s.budget || 0), 0);
 });
+
+const openPhotosModal = async (signalement: Signalement) => {
+  selectedSignalementForPhotos.value = signalement;
+  try {
+    modalPhotos.value = await FirestoreService.getSignalementPhotos(String(signalement.id));
+  } catch (error) {
+    console.error('Erreur lors du chargement des photos:', error);
+    modalPhotos.value = [];
+  }
+  showPhotosModal.value = true;
+};
+
+const closePhotosModal = () => {
+  showPhotosModal.value = false;
+  selectedSignalementForPhotos.value = null;
+  modalPhotos.value = [];
+};
+
+const formatDate = (timestamp: any) => {
+  if (!timestamp) return 'Date inconnue';
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('fr-FR', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return 'Date invalide';
+  }
+};
 
 const avgAvancement = computed(() => {
   if (allSignalements.value.length === 0) return 0;
@@ -472,6 +545,69 @@ ion-badge {
 
 .empty-state p {
   font-size: 16px;
+  font-weight: 500;
+}
+
+/* Signalement Buttons */
+.signalement-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-start;
+}
+
+/* Photos Modal Styles */
+.photos-modal-content {
+  padding: 1.5rem;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.photo-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.modal-photo-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-info {
+  padding: 1rem;
+  background: var(--bg-primary);
+}
+
+.photo-description {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.photo-date {
+  margin: 0.5rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.no-photos {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.no-photos p {
+  margin: 0;
   font-weight: 500;
 }
 </style>
