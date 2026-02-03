@@ -91,6 +91,27 @@
           </ion-card-content>
         </ion-card>
 
+        <!-- Section Photos -->
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>3. Photos</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-button expand="block" color="secondary" @click="capturePhoto">
+              <ion-icon slot="start" name="camera"></ion-icon>
+              Capturer une photo
+            </ion-button>
+            <div v-if="photos.length > 0" class="photos-container">
+              <div v-for="(photo, index) in photos" :key="index" class="photo-item">
+                <ion-img :src="photo" class="captured-photo"></ion-img>
+                <ion-button fill="clear" color="danger" class="delete-photo-btn" @click="deletePhoto(index)">
+                  <ion-icon slot="icon-only" name="trash"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
         <!-- Boutons -->
         <ion-button 
           expand="block" 
@@ -130,6 +151,34 @@
         </ion-content>
       </ion-modal>
 
+      <!-- Modal pour la caméra -->
+      <ion-modal :is-open="showCameraModal" @did-dismiss="closeCameraModal">
+        <ion-header :translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start">
+              <ion-button color="medium" @click="closeCameraModal">Annuler</ion-button>
+            </ion-buttons>
+            <ion-title>Capturer une photo</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <div class="camera-modal-content">
+            <video ref="videoElement" autoplay playsinline class="camera-video"></video>
+            <canvas ref="canvasElement" style="display: none;"></canvas>
+            <div class="camera-buttons">
+              <ion-button expand="block" color="success" @click="takePhoto">
+                <ion-icon slot="start" name="camera"></ion-icon>
+                Prendre la photo
+              </ion-button>
+              <ion-button expand="block" color="medium" @click="closeCameraModal">
+                <ion-icon slot="start" name="close"></ion-icon>
+                Annuler
+              </ion-button>
+            </div>
+          </div>
+        </ion-content>
+      </ion-modal>
+
       <!-- Toast pour les messages -->
       <ion-toast
         :is-open="showToast"
@@ -160,20 +209,26 @@ import { addSignalementToFirestore, getEntreprises } from '../stores/signalement
 import { AuthService } from '../services/authService';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 const router = useRouter();
 const ionRouter = useIonRouter();
 const mapContainer = ref<HTMLElement>();
+const videoElement = ref<HTMLVideoElement>();
+const canvasElement = ref<HTMLCanvasElement>();
 let map: L.Map;
 let selectedMarker: L.Marker | null = null;
+let mediaStream: MediaStream | null = null;
 
 const showMapModal = ref(false);
+const showCameraModal = ref(false);
 const selectedPosition = ref<{ lat: number; lng: number } | null>(null);
 const isLoading = ref(false);
 const showToast = ref(false);
 const toastMessage = ref('');
 const toastColor = ref<'success' | 'danger'>('success');
 const entreprisesDisponibles = getEntreprises();
+const photos = ref<string[]>([]);
 
 const form = ref<{
   description: string;
@@ -266,6 +321,190 @@ const clearPosition = () => {
   }
 };
 
+const capturePhoto = async () => {
+  try {
+    // Vérifier si on est sur une plateforme native (iOS/Android)
+    const { Capacitor } = await import('@capacitor/core');
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative) {
+      // Sur mobile, utiliser la caméra native
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera
+      });
+      photos.value.push(image.dataUrl);
+    } else {
+      // Sur le web, ouvrir le modal avec la caméra en direct
+      await openCameraModal();
+    }
+  } catch (error) {
+    console.error('Erreur lors de la capture de photo:', error);
+    toastColor.value = 'danger';
+    toastMessage.value = 'Erreur lors de la capture de photo';
+    showToast.value = true;
+  }
+};
+
+const openCameraModal = async () => {
+  try {
+    showCameraModal.value = true;
+    
+    // Attendre que le modal soit rendu
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Accéder à la caméra
+    mediaStream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'user' } 
+    });
+    
+    if (videoElement.value) {
+      videoElement.value.srcObject = mediaStream;
+    }
+  } catch (error) {
+    console.error('Erreur d\'accès à la caméra:', error);
+    showCameraModal.value = false;
+    
+    // Fallback: ouvrir le sélecteur de fichiers
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target?.result as string;
+          photos.value.push(dataUrl);
+          toastColor.value = 'success';
+          toastMessage.value = '✅ Photo sélectionnée avec succès!';
+          showToast.value = true;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  }
+};
+
+const takePhoto = () => {
+  try {
+    if (!videoElement.value || !canvasElement.value) {
+      toastColor.value = 'danger';
+      toastMessage.value = 'Erreur: Élément vidéo ou canvas non trouvé';
+      showToast.value = true;
+      return;
+    }
+
+    // Obtenir les dimensions de la vidéo
+    const video = videoElement.value;
+    const canvas = canvasElement.value;
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Dessiner l'image de la vidéo sur le canvas
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      
+      // Convertir en Data URL et ajouter la photo
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      photos.value.push(dataUrl);
+      
+      toastColor.value = 'success';
+      toastMessage.value = '✅ Photo capturée avec succès!';
+      showToast.value = true;
+      
+      // Fermer le modal
+      closeCameraModal();
+    }
+  } catch (error) {
+    console.error('Erreur lors de la capture:', error);
+    toastColor.value = 'danger';
+    toastMessage.value = 'Erreur lors de la capture de la photo';
+    showToast.value = true;
+  }
+};
+
+const closeCameraModal = () => {
+  showCameraModal.value = false;
+  
+  // Arrêter la caméra
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+    mediaStream = null;
+  }
+};
+
+const deletePhoto = (index: number) => {
+  photos.value.splice(index, 1);
+  toastColor.value = 'success';
+  toastMessage.value = '🗑️ Photo supprimée';
+  showToast.value = true;
+};
+
+const capturePhotoWeb = async () => {
+  try {
+    // Créer un élément vidéo temporaire pour accéder à la caméra
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    
+    // Créer un élément video
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.play();
+    
+    // Attendre que la vidéo soit prête
+    await new Promise(resolve => {
+      video.onloadedmetadata = resolve;
+    });
+    
+    // Créer un canvas et y dessiner l'image de la vidéo
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+    }
+    
+    // Arrêter la caméra
+    stream.getTracks().forEach(track => track.stop());
+    
+    // Convertir en Data URL et ajouter la photo
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    photos.value.push(dataUrl);
+    
+    toastColor.value = 'success';
+    toastMessage.value = '✅ Photo capturée avec succès!';
+    showToast.value = true;
+  } catch (error) {
+    console.error('Erreur d\'accès à la caméra web:', error);
+    
+    // Fallback: ouvrir le sélecteur de fichiers
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target?.result as string;
+          photos.value.push(dataUrl);
+          toastColor.value = 'success';
+          toastMessage.value = '✅ Photo sélectionnée avec succès!';
+          showToast.value = true;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  }
+};
+
 const resetForm = () => {
   form.value = {
     description: '',
@@ -276,6 +515,7 @@ const resetForm = () => {
     dernier_statut: 'Signalé'
   };
   selectedPosition.value = null;
+  photos.value = [];
   clearPosition();
 };
 
@@ -299,7 +539,8 @@ const submitForm = async () => {
       entreprise: form.value.entreprise,
       dernier_statut: form.value.dernier_statut,
       id_user: userId,
-      email: userEmail
+      email: userEmail,
+      photos: photos.value
     });
 
     // Afficher le message de succès
@@ -541,6 +782,51 @@ const submitForm = async () => {
   border-color: var(--text-secondary);
 }
 
+.photos-container {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.photo-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.captured-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--border-light);
+}
+
+.delete-photo-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  --padding-start: 4px;
+  --padding-end: 4px;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --color: #ef4444;
+}
+
+.delete-photo-btn:hover {
+  --color: #dc2626;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 /* Modal styling */
 ion-modal ion-toolbar {
   --background: var(--gradient-primary);
@@ -550,5 +836,34 @@ ion-modal ion-toolbar {
 ion-modal ion-button {
   --color: white;
   font-weight: 600;
+}
+
+/* Camera Modal Styles */
+.camera-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.camera-video {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.camera-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-light);
+}
+
+.camera-buttons ion-button {
+  --color: white;
 }
 </style>
