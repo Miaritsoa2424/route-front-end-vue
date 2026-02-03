@@ -16,9 +16,9 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@capacitor/core', '@capacitor/geolocation']
+    exclude: ['@capacitor/core', '@capacitor/geolocation', '@capacitor/camera']
   },
   ssr: {
-    noExternal: ['@capacitor/core', '@capacitor/geolocation']
+    noExternal: ['@capacitor/core', '@capacitor/geolocation', '@capacitor/camera']
   }
 })
