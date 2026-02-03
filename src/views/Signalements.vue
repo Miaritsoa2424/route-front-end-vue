@@ -252,7 +252,7 @@ const totalBudget = computed(() => {
 const openPhotosModal = async (signalement: Signalement) => {
   selectedSignalementForPhotos.value = signalement;
   try {
-    modalPhotos.value = await FirestoreService.getSignalementPhotos(signalement.id);
+    modalPhotos.value = await FirestoreService.getSignalementPhotos(String(signalement.id));
   } catch (error) {
     console.error('Erreur lors du chargement des photos:', error);
     modalPhotos.value = [];

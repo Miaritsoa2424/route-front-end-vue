@@ -335,7 +335,9 @@ const capturePhoto = async () => {
         resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera
       });
-      photos.value.push(image.dataUrl);
+      if (image.dataUrl) {
+        photos.value.push(image.dataUrl);
+      }
     } else {
       // Sur le web, ouvrir le modal avec la caméra en direct
       await openCameraModal();
