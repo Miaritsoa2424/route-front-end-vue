@@ -15,11 +15,12 @@ export class FirestoreService {
     try {
       const q = query(collection(db, 'tentative'), where('email', '==', email));
       const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
+      if (!querySnapshot.empty && querySnapshot.docs[0]) {
         const docSnap = querySnapshot.docs[0];
-        console.log("Tentatives pour " + email + ": " + docSnap.data().tentative);
+        const data = docSnap.data();
+        console.log("Tentatives pour " + email + ": " + data.tentative);
         
-        return docSnap.data().tentative || 0;
+        return data.tentative || 0;
       }
       return 0;
     } catch (error) {
@@ -35,11 +36,11 @@ export class FirestoreService {
     try {
       const q = query(collection(db, 'tentative'), where('email', '==', email));
       const querySnapshot = await getDocs(q);
-      const current = querySnapshot.empty ? 0 : querySnapshot.docs[0].data().tentative || 0;
+      const current = querySnapshot.empty || !querySnapshot.docs[0] ? 0 : querySnapshot.docs[0].data().tentative || 0;
       const newAttempts = current + 1;
       if (querySnapshot.empty) {
         await addDoc(collection(db, 'tentative'), { email, tentative: newAttempts });
-      } else {
+      } else if (querySnapshot.docs[0]) {
         const docRef = querySnapshot.docs[0].ref;
         await updateDoc(docRef, { tentative: newAttempts });
       }
@@ -57,7 +58,7 @@ export class FirestoreService {
     try {
       const q = query(collection(db, 'tentative'), where('email', '==', email));
       const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
+      if (!querySnapshot.empty && querySnapshot.docs[0]) {
         const docRef = querySnapshot.docs[0].ref;
         await updateDoc(docRef, { tentative: 0 });
       } else {
