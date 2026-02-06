@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "966944901689",
+    "project_id": "route-de021",
+    "storage_bucket": "route-de021.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:966944901689:android:e5d53b94ef56794b8a5be8",
+        "android_client_info": {
+          "package_name": "com.example.routesignalement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQkjYrsbxNB0QW_yAKXYfXNYzGSTml_ng"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

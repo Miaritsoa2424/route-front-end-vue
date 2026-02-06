@@ -78,6 +78,7 @@ import {
 import { alertCircle, checkmarkCircle } from 'ionicons/icons';
 import { AuthService } from '../services/authService';
 import { FirestoreService } from '../services/firestoreService';
+import { NotificationService } from '../services/notificationService';
 
 const router = useRouter();
 
@@ -115,6 +116,9 @@ const handleLogin = async () => {
     
     // Reset attempts on successful login
     await FirestoreService.resetAttempts(email.value);
+    
+    // Sauvegarder le token FCM après connexion réussie
+    await NotificationService.onUserLogin();
     
     // Rediriger vers la Carte après 1 seconde
     setTimeout(() => {

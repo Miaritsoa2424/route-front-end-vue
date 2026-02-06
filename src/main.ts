@@ -5,6 +5,8 @@ import { IonicVue } from '@ionic/vue'
 import App from './App.vue'
 import router from './router'
 import { initSignalementsStore } from './stores/signalementsStore'
+import { AuthService } from './services/authService'
+import { NotificationService } from './services/notificationService'
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/vue/css/core.css'
@@ -29,5 +31,25 @@ const app = createApp(App)
 router.isReady().then(async () => {
   // Initialiser le store avant de monter l'app
   await initSignalementsStore()
+
+  // Initialiser les notifications push au démarrage de l'app
+  try {
+    await NotificationService.initializeNotifications()
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation des notifications:', error)
+  }
+
+  // Écouter les changements d'état d'authentification
+  AuthService.onAuthStateChanged(async (user) => {
+    if (user) {
+      // Sauvegarder le token FCM si en attente après connexion
+      try {
+        await NotificationService.onUserLogin()
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde du token FCM:', error)
+      }
+    }
+  })
+
   app.mount('#app')
 })
