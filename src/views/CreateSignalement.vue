@@ -103,10 +103,10 @@
             </ion-button>
             <div v-if="photos.length > 0" class="photos-container">
               <div v-for="(photo, index) in photos" :key="index" class="photo-item">
-                <ion-img :src="photo" class="captured-photo"></ion-img>
-                <ion-button fill="clear" color="danger" class="delete-photo-btn" @click="deletePhoto(index)">
-                  <ion-icon slot="icon-only" name="trash"></ion-icon>
-                </ion-button>
+                <img :src="photo" class="captured-photo" alt="Photo capturée" />
+                <button class="delete-photo-btn" @click="deletePhoto(index)" type="button">
+                  <span class="delete-icon">✕</span>
+                </button>
               </div>
             </div>
           </ion-card-content>
@@ -328,15 +328,19 @@ const capturePhoto = async () => {
     const isNative = Capacitor.isNativePlatform();
 
     if (isNative) {
-      // Sur mobile, utiliser la caméra native
+      // Sur mobile, utiliser la caméra native avec Base64
       const image = await Camera.getPhoto({
-        quality: 90,
+        quality: 80,
         allowEditing: false,
-        resultType: CameraResultType.DataUrl,
+        resultType: CameraResultType.Base64,
         source: CameraSource.Camera
       });
-      if (image.dataUrl) {
-        photos.value.push(image.dataUrl);
+      if (image.base64String) {
+        const dataUrl = `data:image/jpeg;base64,${image.base64String}`;
+        photos.value.push(dataUrl);
+        toastColor.value = 'success';
+        toastMessage.value = '✅ Photo capturée avec succès!';
+        showToast.value = true;
       }
     } else {
       // Sur le web, ouvrir le modal avec la caméra en direct
@@ -803,30 +807,42 @@ const submitForm = async () => {
   object-fit: cover;
   border-radius: 8px;
   border: 2px solid var(--border-light);
+  display: block;
 }
 
 .delete-photo-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  --padding-start: 4px;
-  --padding-end: 4px;
-  --padding-top: 4px;
-  --padding-bottom: 4px;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  --color: #ef4444;
+  background-color: #dc2626;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
 }
 
 .delete-photo-btn:hover {
-  --color: #dc2626;
-  background: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background-color: #b91c1c;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.6);
+}
+
+.delete-photo-btn:active {
+  transform: scale(0.95);
+}
+
+.delete-icon {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
 }
 
 /* Modal styling */
