@@ -57,6 +57,13 @@
             <span v-else>Se connecter</span>
           </IonButton>
         </form>
+
+        <!-- Continue without login -->
+        <div class="continue-without-login">
+          <IonButton fill="clear" @click="continueWithoutLogin" class="continue-button">
+            Continuer sans se connecter
+          </IonButton>
+        </div>
       </div>
     </IonContent>
   </IonPage>
@@ -149,6 +156,10 @@ const handleLogin = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const continueWithoutLogin = () => {
+  router.push('/map');
 };
 </script>
 
@@ -349,5 +360,24 @@ const handleLogin = async () => {
 ion-spinner {
   margin-right: 8px;
   --color: white;
+}
+
+.continue-without-login {
+  text-align: center;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.continue-button {
+  --color: white;
+  --background: transparent;
+  --border-color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.continue-button:hover {
+  --background: rgba(255, 255, 255, 0.1);
 }
 </style>

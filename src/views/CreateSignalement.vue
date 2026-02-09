@@ -564,6 +564,11 @@ const submitForm = async () => {
 
   } catch (error: any) {
     console.error('❌ Erreur lors de la création du signalement', error);
+    console.error('Détails de l\'erreur:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     
     // Afficher le message d'erreur
     toastColor.value = 'danger';
@@ -575,6 +580,10 @@ const submitForm = async () => {
       userMessage = '❌ Erreur réseau. Vérifiez votre connexion internet.';
     } else if (!selectedPosition.value) {
       userMessage = '❌ Veuillez sélectionner une position sur la carte.';
+    } else if (error.message && error.message.includes('imgbb')) {
+      userMessage = '❌ Erreur upload image. Vérifiez la configuration imgbb.';
+    } else if (error.message && error.message.includes('API')) {
+      userMessage = '❌ Clé API imgbb manquante ou invalide.';
     }
     
     toastMessage.value = userMessage;
