@@ -23,6 +23,36 @@ TypeScript cannot handle type information for `.vue` imports by default, so we r
 
 See [Vite Configuration Reference](https://vite.dev/config/).
 
+## Configuration imgbb
+
+Ce projet utilise [imgbb](https://imgbb.com/) pour stocker les images des signalements.
+
+### Étapes de configuration :
+
+1. **Créer un compte imgbb** : Allez sur [https://imgbb.com/](https://imgbb.com/) et créez un compte gratuit.
+
+2. **Obtenir votre clé API** :
+   - Connectez-vous à votre compte imgbb
+   - Allez dans vos paramètres API
+   - Copiez votre clé API
+
+3. **Configurer les variables d'environnement** :
+   ```sh
+   cp .env.example .env
+   ```
+   Puis éditez le fichier `.env` et remplacez `votre_cle_api_imgbb_ici` par votre vraie clé API :
+   ```
+   VITE_IMGBB_API_KEY=votre_vraie_cle_api_ici
+   ```
+
+### Comment ça fonctionne :
+
+- 📸 **Compression locale** : Les images sont compressées en JPEG (qualité 70%) avant l'envoi
+- 📦 **Upload multipart/form-data** : Les images compressées sont envoyées directement en binaire via FormData
+- ☁️ **Stockage imgbb** : imgbb héberge les images et fournit des URLs permanentes
+- 🔗 **Stockage URL** : Seule l'URL de l'image est stockée dans Firestore
+- 💰 **Économique** : Réduction massive des coûts Firestore et des performances améliorées
+
 ## Project Setup
 
 ```sh

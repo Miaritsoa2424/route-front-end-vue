@@ -3,6 +3,7 @@
 import { getFirestore, collection, getDocs, GeoPoint, addDoc, serverTimestamp, doc, getDoc, setDoc, where, query, updateDoc, writeBatch } from 'firebase/firestore';
 import type { Signalement, Entreprise } from '../data/signalements';
 import { SignalementStatus } from '../data/signalements';
+import { StorageService } from './storageService';
 
 const db = getFirestore();
 
@@ -138,6 +139,10 @@ export class FirestoreService {
 
   /**
    * Ajouter un nouveau signalement à Firestore
+   *
+   * OPTIMISATION: Les photos sont maintenant uploadées vers imgbb
+   * au lieu d'être stockées en base64 dans Firestore.
+   * Cela réduit considérablement la taille des documents.
    */
   static async addSignalement(signalement: Omit<Signalement, 'id'>): Promise<Signalement> {
     try {
@@ -162,9 +167,30 @@ export class FirestoreService {
 
       console.log('✅ Signalement ajouté avec ID:', docRef.id);
 
-      // Ajouter les photos dans la sous-collection 'images'
+      // OPTIMISATION: Upload des photos vers imgbb
+      // puis stockage des URLs dans Firestore
       if (signalement.photos && signalement.photos.length > 0) {
-        await this.addPhotosToSignalement(docRef.id, signalement.photos);
+        console.log('📤 Upload des photos vers imgbb...', signalement.photos.length, 'photos');
+        
+        // Filtrer les photos qui sont en base64 (à uploader) vs déjà des URLs
+        const photosToUpload = signalement.photos.filter(p => StorageService.isDataUrl(p));
+        const existingUrls = signalement.photos.filter(p => !StorageService.isDataUrl(p));
+        
+        console.log('📊 Photos à uploader:', photosToUpload.length, 'URLs existantes:', existingUrls.length);
+        
+        // Uploader les nouvelles photos vers imgbb
+        let uploadedUrls: string[] = [];
+        if (photosToUpload.length > 0) {
+          uploadedUrls = await StorageService.uploadMultipleImages(photosToUpload);
+        }
+        
+        // Combiner les URLs existantes et nouvelles
+        const allUrls = [...existingUrls, ...uploadedUrls];
+        
+        console.log('✅ URLs finales:', allUrls);
+        
+        // Sauvegarder les URLs dans la sous-collection 'images'
+        await this.addPhotosToSignalement(docRef.id, allUrls);
       }
 
       // Retourner le signalement avec l'ID généré
