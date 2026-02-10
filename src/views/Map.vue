@@ -268,16 +268,38 @@ const addSignalementsToMap = () => {
       'Résolu': 'Terminé'
     }[signalement.dernier_statut] || signalement.dernier_statut;
 
-    const popupContent = `
-      <div style="min-width: 250px;">
-        <strong style="font-size: 14px;">${signalement.description}</strong><br>
-        <span style="color: ${color}; font-weight: bold;">${statusLabel.toUpperCase()}</span><br><br>
-        <small><strong>Entreprise:</strong> ${signalement.entreprise}</small><br>
-        <small><strong>Avancement:</strong> ${signalement.avancement}%</small><br>
-        ${signalement.surface ? `<small><strong>Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
-        ${signalement.budget ? `<small><strong>Budget:</strong> ${signalement.budget}Ar</small><br>` : ''}
-      </div>
-    `;
+    let popupContent = '';
+
+    if (signalement.dernier_statut === 'Signalé') {
+      // Popup spécial pour les signalements "Signalé"
+      popupContent = `
+        <div style="min-width: 280px; padding: 8px;">
+          <div style="background: #ffeaa7; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+            <strong style="color: #d63031;">🚨 SIGNALEMENT RECENT</strong><br>
+            <small style="color: #636e72;">Ce signalement vient d'être créé et nécessite une intervention</small>
+          </div>
+          <strong style="font-size: 14px; color: #2d3436;">${signalement.description}</strong><br>
+          <span style="color: ${color}; font-weight: bold; background: ${color}20; padding: 2px 6px; border-radius: 3px;">${statusLabel.toUpperCase()}</span><br><br>
+          <div style="background: #f8f9fa; padding: 6px; border-radius: 4px;">
+            <small><strong>💰 Budget estimé:</strong> ${signalement.budget || 0} Ar</small><br>
+            ${signalement.surface ? `<small><strong>📐 Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
+            <small><strong>📅 Avancement:</strong> ${signalement.avancement}%</small>
+          </div>
+        </div>
+      `;
+    } else {
+      // Popup normal pour les autres statuts
+      popupContent = `
+        <div style="min-width: 250px;">
+          <strong style="font-size: 14px;">${signalement.description}</strong><br>
+          <span style="color: ${color}; font-weight: bold;">${statusLabel.toUpperCase()}</span><br><br>
+          <small><strong>Entreprise:</strong> ${signalement.entreprise}</small><br>
+          <small><strong>💰 Budget:</strong> ${signalement.budget || 0} Ar</small><br>
+          <small><strong>Avancement:</strong> ${signalement.avancement}%</small><br>
+          ${signalement.surface ? `<small><strong>Surface:</strong> ${signalement.surface}m²</small><br>` : ''}
+        </div>
+      `;
+    }
 
     // Ajouter le marqueur sur la carte
     const marker = L.marker([signalement.latitude, signalement.longitude], { icon: customIcon })
