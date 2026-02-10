@@ -2,7 +2,13 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>Signalements</ion-title>
+        <ion-title>
+          Signalements
+          <ion-badge v-if="realTimeActive" color="success" class="realtime-badge">
+            <ion-icon name="sync" class="spinning"></ion-icon>
+            Live
+          </ion-badge>
+        </ion-title>
         <ion-buttons slot="end">
           <ion-button v-if="!authUser" router-link="/login">
             <ion-icon slot="start" name="log-in"></ion-icon>
@@ -166,7 +172,7 @@ import {
 } from '@ionic/vue';
 import { addCircle } from 'ionicons/icons';
 import {STATUS_COLORS, type Signalement } from '../data/signalements';
-import {getAllSignalements } from '../stores/signalementsStore';
+import {getAllSignalements, isRealTimeActive } from '../stores/signalementsStore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/firebase';
 import { AuthService } from '../services/authService';
@@ -196,6 +202,7 @@ const handleLogout = async () => {
 };
 
 const allSignalements = computed(() => getAllSignalements().value);
+const realTimeActive = computed(() => isRealTimeActive().value);
 
 const totalSignalements = computed(() => allSignalements.value.length);
 
@@ -609,5 +616,24 @@ ion-badge {
 .no-photos p {
   margin: 0;
   font-weight: 500;
+}
+
+.realtime-badge {
+  margin-left: 8px;
+  font-size: 10px;
+  vertical-align: middle;
+}
+
+.realtime-badge ion-icon {
+  margin-right: 4px;
+}
+
+.spinning {
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

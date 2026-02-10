@@ -53,6 +53,44 @@ Ce projet utilise [imgbb](https://imgbb.com/) pour stocker les images des signal
 - 🔗 **Stockage URL** : Seule l'URL de l'image est stockée dans Firestore
 - 💰 **Économique** : Réduction massive des coûts Firestore et des performances améliorées
 
+## 🔄 Synchronisation Temps Réel
+
+Cette application utilise **Firebase Firestore Real-time Listeners** pour synchroniser automatiquement les données entre le mobile et la base de données.
+
+### ✨ Fonctionnalités
+
+- **🔄 Mise à jour automatique** : Les signalements se mettent à jour en temps réel sans recharger l'app
+- **📊 Indicateur visuel** : Badge "Live" avec icône animée quand la synchro est active
+- **⚡ Performance** : Écoute uniquement les changements, pas de rechargement complet
+- **🔌 Connexion intelligente** : Gestion automatique des connexions/déconnexions
+
+### 🏗️ Architecture Technique
+
+```typescript
+// Store Pinia avec listeners temps réel
+export const startSignalementsRealTimeListener = () => {
+  onSnapshot(collection(db, 'signalement'), (snapshot) => {
+    // Mise à jour automatique des données
+    firestoreSignalements.value = data;
+  });
+};
+```
+
+### 🎯 Avantages
+
+- ✅ **Plus besoin de fermer/rouvrir l'app** pour voir les changements
+- ✅ **Économie de bande passante** (pas de polling)
+- ✅ **Interface fluide** et réactive
+- ✅ **Synchronisation bidirectionnelle**
+
+### 🔧 Configuration
+
+La synchronisation se lance automatiquement au démarrage de l'app dans `main.ts` :
+
+```typescript
+await initSignalementsStore(); // Active les listeners temps réel
+```
+
 ## Project Setup
 
 ```sh
