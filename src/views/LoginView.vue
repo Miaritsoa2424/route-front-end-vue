@@ -89,8 +89,8 @@ import { NotificationService } from '../services/notificationService';
 
 const router = useRouter();
 
-const email = ref('');
-const password = ref('');
+const email = ref('sarah@gmail.mg');
+const password = ref('sarah123');
 const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
