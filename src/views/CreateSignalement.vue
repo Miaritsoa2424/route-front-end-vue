@@ -42,51 +42,19 @@
         <!-- Formulaire -->
         <ion-card>
           <ion-card-header>
-            <ion-card-title>2. Informations du signalement</ion-card-title>
+            <ion-card-title>2. Description du signalement</ion-card-title>
           </ion-card-header>
           <ion-card-content>
             <!-- Description -->
             <ion-item>
               <ion-label position="floating">Description</ion-label>
-              <ion-textarea v-model="form.description" placeholder="Décrivez le signalement" :rows="3" required></ion-textarea>
-            </ion-item>
-
-            <!-- Entreprise (Select) -->
-            <ion-item>
-              <ion-label position="stacked">Entreprise</ion-label>
-              <ion-select v-model="form.entreprise" placeholder="Sélectionner une entreprise" required>
-                <ion-select-option v-for="ent in entreprisesDisponibles" :key="ent.id" :value="ent.nom">
-                  {{ ent.nom }}
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
-
-            <!-- Surface -->
-            <ion-item>
-              <ion-label position="floating">Surface (m²)</ion-label>
-              <ion-input v-model.number="form.surface" type="number" placeholder="0" required></ion-input>
-            </ion-item>
-
-            <!-- Budget -->
-            <ion-item>
-              <ion-label position="floating">Budget (Ar)</ion-label>
-              <ion-input v-model.number="form.budget" type="number" placeholder="0" required></ion-input>
-            </ion-item>
-
-            <!-- Avancement -->
-            <ion-item>
-              <ion-label position="floating">Avancement (%)</ion-label>
-              <ion-input v-model.number="form.avancement" type="number" placeholder="0" min="0" max="100" required></ion-input>
-            </ion-item>
-
-            <!-- Statut -->
-            <ion-item>
-              <ion-label position="stacked">Statut</ion-label>
-              <ion-select v-model="form.dernier_statut" placeholder="Sélectionner" required>
-                <ion-select-option value="Signalé">Signalé</ion-select-option>
-                <ion-select-option value="En cours">En cours</ion-select-option>
-                <ion-select-option value="Terminé">Terminé</ion-select-option>
-              </ion-select>
+              <ion-textarea 
+                ref="descriptionTextarea"
+                v-model="form.description" 
+                placeholder="Décrivez le problème rencontré" 
+                :rows="4" 
+                required
+              ></ion-textarea>
             </ion-item>
           </ion-card-content>
         </ion-card>
@@ -193,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader,
@@ -205,7 +173,7 @@ import {
 import { checkmarkDone } from 'ionicons/icons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { addSignalementToFirestore, getEntreprises } from '../stores/signalementsStore';
+import { addSignalementToFirestore } from '../stores/signalementsStore';
 import { AuthService } from '../services/authService';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -216,6 +184,7 @@ const ionRouter = useIonRouter();
 const mapContainer = ref<HTMLElement>();
 const videoElement = ref<HTMLVideoElement>();
 const canvasElement = ref<HTMLCanvasElement>();
+const descriptionTextarea = ref<HTMLIonTextareaElement>();
 let map: L.Map;
 let selectedMarker: L.Marker | null = null;
 let mediaStream: MediaStream | null = null;
@@ -227,23 +196,12 @@ const isLoading = ref(false);
 const showToast = ref(false);
 const toastMessage = ref('');
 const toastColor = ref<'success' | 'danger'>('success');
-const entreprisesDisponibles = getEntreprises();
 const photos = ref<string[]>([]);
 
 const form = ref<{
   description: string;
-  entreprise: string;
-  surface: number | null;
-  budget: number | null;
-  avancement: number | null;
-  dernier_statut: string;
 }>({
-  description: '',
-  entreprise: '',
-  surface: null as number | null,
-  budget: null as number | null,
-  avancement: 0 as number | null,
-  dernier_statut: 'Signalé'
+  description: ''
 });
 
 const defaultIcon = L.icon({
@@ -258,7 +216,30 @@ const defaultIcon = L.icon({
 L.Marker.prototype.setIcon(defaultIcon);
 
 const isFormValid = computed(() => {
-  return form.value.description && form.value.entreprise && form.value.surface && form.value.budget !== null && form.value.avancement !== null && selectedPosition.value;
+  return form.value.description.trim().length > 0 && selectedPosition.value;
+});
+
+// Watcher pour le focus automatique
+watch(selectedPosition, (newPosition) => {
+  if (newPosition && descriptionTextarea.value) {
+    // Quand une position est sélectionnée, focus sur la description
+    nextTick(() => {
+      descriptionTextarea.value?.setFocus();
+    });
+  }
+});
+
+watch(isFormValid, (isValid) => {
+  if (isValid) {
+    // Quand le formulaire devient valide, scroll vers le bas de la page
+    nextTick(() => {
+      const element = document.querySelector('.submit-button');
+      element?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    });
+  }
 });
 
 onMounted(() => {
@@ -513,12 +494,7 @@ const capturePhotoWeb = async () => {
 
 const resetForm = () => {
   form.value = {
-    description: '',
-    entreprise: '',
-    surface: null,
-    budget: null,
-    avancement: 0,
-    dernier_statut: 'Signalé'
+    description: ''
   };
   selectedPosition.value = null;
   photos.value = [];
@@ -539,11 +515,11 @@ const submitForm = async () => {
       latitude: selectedPosition.value.lat,
       longitude: selectedPosition.value.lng,
       description: form.value.description,
-      surface: form.value.surface || 0,
-      budget: form.value.budget || 0,
-      avancement: form.value.avancement || 0,
-      entreprise: form.value.entreprise,
-      dernier_statut: form.value.dernier_statut,
+      surface: 0, // Valeur par défaut
+      budget: 0, // Valeur par défaut
+      avancement: 0, // Valeur par défaut
+      entreprise: '', // Valeur par défaut (non assignée)
+      dernier_statut: 'Signalé', // Valeur par défaut
       id_user: userId,
       email: userEmail,
       photos: photos.value
@@ -559,7 +535,7 @@ const submitForm = async () => {
 
     // Rediriger vers la liste après 2 secondes
     setTimeout(() => {
-      ionRouter.navigate('/signalements', 'back');
+      router.push('/signalements');
     }, 2000);
 
   } catch (error: any) {
