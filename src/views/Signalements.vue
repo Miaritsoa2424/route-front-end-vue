@@ -239,7 +239,7 @@ const filteredTotalSurface = computed(() => {
 });
 
 const filteredTotalBudget = computed(() => {
-  return filteredSignalements.value.reduce((sum: number, s: Signalement) => sum + (parseFloat(s.budget as string) || 0), 0);
+  return filteredSignalements.value.reduce((sum: number, s: Signalement) => sum + (s.budget || 0), 0);
 });
 
 const filteredAvgAvancement = computed(() => {
@@ -253,7 +253,7 @@ const totalSurface = computed(() => {
 });
 
 const totalBudget = computed(() => {
-  return allSignalements.value.reduce((sum: number, s: Signalement) => sum + (parseFloat(s.budget as string) || 0), 0);
+  return allSignalements.value.reduce((sum: number, s: Signalement) => sum + (s.budget || 0), 0);
 });
 
 const openPhotosModal = async (signalement: Signalement) => {
