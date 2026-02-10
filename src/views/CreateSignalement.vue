@@ -85,7 +85,7 @@
               <ion-select v-model="form.dernier_statut" placeholder="Sélectionner" required>
                 <ion-select-option value="Signalé">Signalé</ion-select-option>
                 <ion-select-option value="En cours">En cours</ion-select-option>
-                <ion-select-option value="Résolu">Terminé</ion-select-option>
+                <ion-select-option value="Terminé">Terminé</ion-select-option>
               </ion-select>
             </ion-item>
           </ion-card-content>
